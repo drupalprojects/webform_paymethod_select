@@ -1,0 +1,9 @@
+name = Webform Component: Payment Method Select
+description = Provides a webform component for selecting payment methods
+core = 7.x
+
+dependencies[] = little_helpers
+dependencies[] = payment (>1.5)
+dependencies[] = paymentreference
+dependencies[] = psr0
+dependencies[] = webform

@@ -1,0 +1,27 @@
+<?php
+/**
+ * webform_component_paymethod_select.install
+ *
+ * @author    Matthias Weiss <matthias@more-onion.com>
+ * @copyright Copyright (c) 2013 copyright
+ */
+
+/**
+ * Implements hook_enable().
+ *
+ * we're setting the module weight in order to have hook_form_alter
+ * being called *after* the same hook from the webform module
+ * we want this to ensure our form submit handler is set *after*
+ * the webform submit handler so our payment methods can redirect
+ * in the payment->execute() call
+ */
+function webform_component_paymethod_select_enable() {
+  db_query(<<<EOS
+    UPDATE system a
+      INNER JOIN system b
+        ON  a.name = 'webform_component_paymethod_select'
+        AND b.name = 'webform'
+      SET a.weight = b.weight + 1
+EOS
+  );
+}

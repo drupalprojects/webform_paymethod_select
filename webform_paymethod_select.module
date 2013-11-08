@@ -1,0 +1,505 @@
+<?php
+/**
+ * @file
+ *
+ * @author    Matthias Weiss <matthias@more-onion.com>
+ * @copyright Copyright (c) 2013 copyright
+ */
+
+
+interface PaymentRecurrentController {
+}
+
+/**
+ * Implements hook_webform_component_info().
+ */
+function webform_component_paymethod_select_webform_component_info() {
+  $components['paymethod_select'] = array(
+    'label'       => t('Donation Payment Selector'),
+    'description' => t('Adds a selectable list of payment methods for a donation webform.'),
+    'features'    => array(
+      'default_value' => FALSE,
+      'required'      => TRUE,
+    ),
+    'file' => 'webform_component_paymethod_select.webform.inc',
+  );
+
+  return $components;
+}
+
+
+/**
+ * Payment finish callback function specified as an argument to
+ * the Payment constructor used for the paymethod_select component
+ */
+function webform_component_paymethod_select_payment_finish(Payment $payment) {
+  switch ($payment->getStatus()->status) {
+    case PAYMENT_STATUS_FAILED:
+      // check if its a setup error
+      // or
+      // a payment processing error
+      break;
+    case PAYMENT_STATUS_SUCCESS:
+      // redirect to thank you page
+      //_webform_confirm_email_send_email($node->nid, $form_state['values']['details']['sid'], 3 /* type custom handler */);
+      break;
+    default:
+  }
+}
+
+/**
+ * Helper function used to create a payment object necessary for the
+ * webform component paymethod_select
+ */
+function webform_component_paymethod_select_create_payment($line_item_descr = 'Default Line Item', $payment_descr = 'Default Payment') {
+  $line_item = new PaymentLineItem(array(
+    'name'        => 'donation',
+    'description' => t('Donation'),
+    'amount'      => 0,
+    'quantity'    => 1,
+    'tax_rate'    => 0
+  ));
+
+  $payment = new Payment(array(
+    'currency_code'   => 'EUR',
+    'description'     => t('Donation'),
+    'finish_callback' => 'webform_component_paymethod_select_payment_finish',
+  ));
+
+  $payment->setLineItem($line_item);
+
+  return $payment;
+}
+
+/**
+ * Helper function to get a cleaned payment method controller name
+ * this is necessary for controller names that include PHP namespaces
+ */
+function webform_component_paymethod_select_clean_name($controller_name) {
+  return drupal_clean_css_identifier(
+    $controller_name,
+    array(
+      ' ' => '-',
+      '_' => '-',
+      '/' => '-',
+      '[' => '-',
+      ']' => '',
+      '\\' => '',
+    )
+  );
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function webform_component_paymethod_select_element_info() {
+  // A payment method selection and configuration element. Every form this
+  // element is used in should have a Payment object in $form_state['payment'].
+  $elements['paymethod_select'] = array(
+    '#input'            => TRUE,
+    '#process'          => array('webform_component_paymethod_select_form_process'),
+    '#element_validate' => array('webform_component_paymethod_select_form_process_validate'),
+    // An array with IDs of the allowed payment methods. Leave empty to allow
+    // all. If just a single value is given, or if only ony payment method is
+    // valid, the element will not expand to a select list, but will appear to
+    // the user as if there only is one payment method available at all.
+    '#selected_payment_methods' => array(),
+  );
+
+  return $elements;
+}
+
+/**
+ * helper function to preload all forms defined by the individual payment methods
+ */
+function _webform_component_paymethod_select_get_payment_method_form(&$element, &$form_state, $method_name) {
+  $payment = $form_state['payment'];
+
+  $form_element_name = webform_component_paymethod_select_clean_name($payment->method->controller->name);
+
+  $element['payment_method_all_forms'][$form_element_name] = array(
+    '#type'        => 'fieldset',
+    '#id'          => $form_element_name,
+    '#title'       => t($method_name),
+    '#attributes'  => array('class' => array('payment-method-form')),
+    '#collapsible' => FALSE,
+    '#collapsed'   => FALSE,
+  );
+
+  $form_elements_callback = $payment->method->controller->payment_configuration_form_elements_callback;
+  if (function_exists($form_elements_callback) == TRUE) {
+    $element['payment_method_all_forms'][$form_element_name] += call_user_func($form_elements_callback, $element['payment_method_all_forms'][$form_element_name], $form_state);
+  }
+}
+
+/**
+ * form process function that was set in hook_element_info().
+ */
+function webform_component_paymethod_select_form_process(array $element, array &$form_state, array &$form) {
+  /*if (empty($form_state['payment']) == TRUE) {
+    $payment = $form_state['payment'] = webform_component_paymethod_select_create_payment();
+  }
+  else {
+    $payment = $form_state['payment'];
+    }*/
+  $payment = $form_state['payment'];
+  dpm($payment, __FUNCTION__ . ': payment');
+
+  $element['#tree'] = TRUE;
+
+  $interval = webform_component_paymethod_select_get_webform_value($form_state, 'donation_interval');
+  $recurrent = !empty($interval) && $interval != '1';
+
+  $pmid_options = array();
+  if (!empty($element['#selected_payment_methods'])) {
+    foreach ($payment->availablePaymentMethods(entity_load('payment_method', $element['#selected_payment_methods'])) as $payment_method) {
+      if (!$recurrent || $payment_method->controller instanceof PaymentRecurrentController) {
+        $pmid_options[(int) $payment_method->pmid] = check_plain($payment_method->title_generic);
+      }
+    }
+  }
+
+  $element['#prefix'] = '<div id="paymethod-select-wrapper">';
+  $element['#suffix'] = '</div>';
+  $element['payment_method_all_forms'] = array(
+    '#type'        => 'container',
+    '#id'          => 'payment-method-all-forms',
+    '#weight'      => 2,
+    '#attributes'  => array('class' => array('payment-method-all-forms')),
+  );
+
+  reset($pmid_options);
+
+  switch (count($pmid_options)) {
+    case 0:
+      if (!$payment->pid) {
+        $form['#disabled'] = TRUE;
+      }
+      $element['pmid_title'] = array(
+        '#type'   => 'item',
+        '#title'  => isset($element['#title']) ? $element['#title'] : NULL,
+        '#markup' => t('There are no payment methods, check the options of this webform element to enable methods.'),
+      );
+      break;
+
+    case 1:
+      $pmid        = key($pmid_options);
+      $method_name = current($pmid_options);
+      if (($payment->method = entity_load_single('payment_method', $pmid)) == NULL) {
+        break;
+      }
+
+      _webform_component_paymethod_select_get_payment_method_form($element, $form_state, $method_name);
+
+      break;
+
+    default :
+      $payment_method_options = array();
+      $payment_method_default = isset($payment->method) ? $payment->method->pmid : key($pmid_options);
+
+      foreach ($pmid_options as $pmid => $method_name) {
+        if (($payment->method = entity_load_single('payment_method', $pmid)) == NULL) {
+          continue;
+        }
+
+        $payment_method_options[$pmid] = t($method_name);
+
+        _webform_component_paymethod_select_get_payment_method_form($element, $form_state, $method_name);
+
+
+        $form_element_name = webform_component_paymethod_select_clean_name($payment->method->controller->name);
+        $element['payment_method_all_forms'][$form_element_name]['#states'] = array(
+          'visible' => array(
+            '#payment-method-selector input' => array('value' => $pmid),
+          )
+        );
+
+        unset($payment->method);
+      }
+
+      $element['payment_method_selector'] = array(
+        '#type'          => 'radios',
+        '#id'            => 'payment-method-selector',
+        '#weight'        => 1,
+        '#title'         => isset($element['#title']) ? $element['#title'] : NULL,
+        '#options'       => $payment_method_options,
+        '#default_value' => $payment_method_default,
+        '#required'      => $element['#required'],
+        '#attributes'    => array('class' => array('paymethod-select-radios')),
+      );
+  }
+  return $element;
+}
+
+/**
+ * form validate callback that was set in hook_element_info().
+ */
+function webform_component_paymethod_select_form_process_validate(array $element, array &$form_state) {
+  $payment = $form_state['payment'];
+
+  if (empty($payment->method)) {
+    $pmid = (int) $element['#value']['payment_method_selector'];
+    $payment->method = entity_load_single('payment_method', $pmid);
+    if ($payment->method->name === 'payment_method_unavailable') {
+      throw new Exception('Invalid Payment Method selected.');
+    }
+  }
+
+  $payment->context_data['context'] = \Drupal\webform_component_paymethod_select\WebformPaymentContext::fromNode($form_state['complete form']['#node']);
+  webform_component_paymethod_select_get_form_values($form_state);
+
+  $form_elements_callback = $payment->method->controller->payment_configuration_form_elements_callback;
+  $form_element_name = webform_component_paymethod_select_clean_name($payment->method->controller->name);
+
+  if (   function_exists($form_elements_callback . '_validate') == TRUE
+      && !empty($element['payment_method_all_forms'][$form_element_name])) {
+    $function = $form_elements_callback . '_validate';
+    $function(
+      $element['payment_method_all_forms'][$form_element_name],
+      $form_state
+    );
+  }
+}
+
+/**
+ * Helper function to get the current node object
+ */
+function webform_component_paymethod_select_get_node(&$form = NULL) {
+  static $node = NULL;
+
+  if ($node == NULL) {
+    if (!empty($form['#node'])) {
+      $node = $form['#node'];
+    }
+    elseif (!empty($form['nid']['#value'])) {
+      $node = node_load($form['nid']['#value']);
+    }
+    else {
+      if (($node = menu_get_object()) == NULL) {
+        $get = NULL;
+        if (isset($_GET['destination']) == TRUE) {
+          $get = $_GET['destination'];
+        }
+        elseif (isset($_GET['q']) == TRUE) {
+          $get = $_GET['q'];
+        }
+        if (   $get != NULL
+            && is_numeric(($nid = preg_replace('/^.*node\/(\d+)\/.*$/', '$1', $get))) == TRUE) {
+          $node = node_load($nid);
+        }
+      }
+    }
+  }
+  return $node;
+}
+
+/*function _webform_component_paymethod_select_set_payment(&$form_state, &$form, $form_submit_handler = NULL) {
+  $node = webform_component_paymethod_select_get_node($form);
+
+  if (isset($node) == TRUE) {
+    foreach($node->webform['components'] as $component) {
+      if ($component['type'] == 'paymethod_select') {
+        dpm($component, 'component');
+        if (empty($form_state['payment']) == TRUE) {
+          dpm(__FUNCTION__ . ': $form_state[payment] ist leer');
+          $form_state['payment'] = webform_component_paymethod_select_create_payment();
+        }
+        //if (empty($component['extra']['payment']) == TRUE) {
+        //  dpm(__FUNCTION__ . ': $component[extra][payment] ist leer');
+        //  $component['extra']['payment']              = &$form_state['payment'];
+        //  $component['extra']['payment']->description = $component['extra']['payment_description'];
+        //  }
+
+        break;
+      }
+    }
+  }
+}*/
+function _webform_component_paymethod_select_set_payment(&$form_state, &$component = NULL) {
+
+  $line_items          = array();
+  $payment_description = t('Default Payment');
+  $currency_code       = 'EUR';
+
+  if ($component != NULL) {
+    dpm($component, __FUNCTION__ . ': component');
+    $line_items          = $component['extra']['payment_line_items'];
+    $payment_description = $component['extra']['payment_description'];
+    $currency_code       = $component['extra']['currency_code'];
+  }
+
+  /*$line_item = new PaymentLineItem(array(
+    'name'        => 'donation',
+    'description' => t('Donation'),
+    'amount'      => 0,
+    'quantity'    => 1,
+    'tax_rate'    => 0
+    ));*/
+
+  $payment = new Payment(
+    array(
+      'currency_code'   => $currency_code,
+      'description'     => $payment_description,
+      'finish_callback' => 'webform_component_paymethod_select_payment_finish',
+    )
+  );
+
+  foreach ($line_items as $line_item) {
+    $payment->setLineItem($line_item);
+  }
+
+  $form_state['payment'] = $payment;
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * We need to ensure a payment object is set in $form_state['payment']
+ * This alters the form for forms used by form_builder_webform
+ */
+function webform_component_paymethod_select_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'form_builder_preview') {
+    //_webform_component_paymethod_select_set_payment($form_state, $form);
+    _webform_component_paymethod_select_set_payment($form_state);
+  }
+}
+
+/**
+ * Implements hook_form_<BASE form ID>_alter().
+ *
+ * We need to ensure a payment object is set in $form_state['payment']
+ * This alters all webforms using the paymethod_select webform component
+ */
+function webform_component_paymethod_select_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
+  $node = webform_component_paymethod_select_get_node($form);
+
+  if (isset($node) == TRUE && isset($node->webform['components']) == TRUE) {
+    foreach($node->webform['components'] as $component) {
+      if ($component['type'] == 'paymethod_select') {
+        if (empty($form_state['payment']) == TRUE) {
+          _webform_component_paymethod_select_set_payment($form_state, $component);
+        }
+        if (in_array('webform_component_paymethod_select_form_submit', $form['#submit']) == FALSE) {
+          $form['#submit'][] = 'webform_component_paymethod_select_form_submit';
+        }
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * form submit handler added in hook_form_alter for webforms containing
+ * the paymethod_select webform component
+ *
+ * it's main purpose is to call the execute method of the payment object
+ * (which in turn calls the execute method of the payment method controller)
+ * that also saves the payment into the DB
+ */
+function webform_component_paymethod_select_form_submit($form, &$form_state) {
+  if (   isset($form_state['payment']) == TRUE
+      && (   isset($form_state['webform_completed']) == FALSE /*single page webform submit*/
+          || $form_state['webform_completed']        == TRUE  /*multi page webform submit*/)) {
+
+    $payment = &$form_state['payment'];
+    $payment->context_data['context']->setSubmission(
+      \Drupal\little_helpers\WebformSubmission::load($form['#node']->nid, $form_state['values']['details']['sid'])
+    );
+    webform_component_paymethod_select_get_form_values($form_state);
+    entity_save('payment', $payment);
+
+    // Execute the payment.
+    if ($payment->getStatus()->status == PAYMENT_STATUS_NEW) {
+      $payment->execute();
+    }
+  }
+}
+
+function webform_component_paymethod_select_get_webform_value(&$form_state, $form_key) {
+  if (!isset($form_state['webform_cids']) && isset($form_state['complete form']['#node']))  {
+    $form_state['webform_cids'] = array();
+    foreach ($form_state['complete form']['#node']->webform['components'] as $component) {
+      $form_state['webform_cids'][$component['form_key']] = (int) $component['cid'];
+    }
+  }
+  if (isset($form_state['values'][$form_key])) {
+    return $form_state['values'][$form_key];
+  }
+  $cids = &$form_state['webform_cids'];
+  if (!isset($cids[$form_key]))
+    return;
+  if (isset($form_state['values']['submitted'][$cids[$form_key]])) {
+    return $form_state['values']['submitted'][$cids[$form_key]];
+  }
+  if (isset($form_state['storage']) && isset($form_state['storage']['submitted'][$cids[$form_key]])) {
+    return $form_state['storage']['submitted'][$cids[$form_key]];
+  }
+}
+
+/**
+ * Helper functions to get the webform field values entered by the user
+ * and store them into $payment->method_data to be available for the payment
+ * methods "execute" method
+ */
+function webform_component_paymethod_select_get_form_values(&$form_state) {
+
+  $payment     = &$form_state['payment'];
+  $method_data = &$payment->method_data;
+
+  $method_data += array(
+    'street_address'    => FALSE,
+    'zip_code'          => FALSE,
+    'city'              => FALSE,
+    'first_name'        => FALSE,
+    'last_name'         => FALSE,
+    'date_of_birth'     => FALSE,
+    'gender'            => FALSE,
+    'form_of_address'   => FALSE,
+    'title'             => FALSE,
+    'email'             => FALSE,
+    'donation_amount'   => FALSE,
+    'donation_interval' => FALSE,
+  );
+
+  // Get values for all form keys in method_data from either
+  // $form_state['storage'] or $form_state['values']
+  foreach ($method_data as $form_key => $value) {
+    $v = webform_component_paymethod_select_get_webform_value($form_state, $form_key);
+    if ($v) {
+      $method_data[$form_key] = $v;
+    }
+  }
+  foreach ($payment->line_items as $line_item) {
+    $line_item->amount = (int) $method_data['donation_amount'];
+  }
+}
+
+/**
+ * Implements hook_webform_submission_presave().
+ *
+ * we need to serialize the submitted payment method form data
+ * in order to have a saved submission
+ */
+function webform_component_paymethod_select_webform_submission_presave($node, &$submission) {
+  foreach($node->webform['components'] as $cid => $component) {
+    if ($component['type'] == 'paymethod_select') {
+      $flatten = &$submission->data[$cid]['value'];
+      unset($submission->data[$cid]['value']);
+      $submission->data[$cid]['value'][0] = serialize($flatten);
+      break;
+    }
+  }
+}
+
+function webform_component_paymethod_select_webform_component_presave(&$component) {
+
+  dpm($component, __FUNCTION__ . ': component');
+}
+
+function webform_component_paymethod_select_webform_component_insert($component) {
+  dpm($component, __FUNCTION__ . ': component');
+}
+
+function webform_component_paymethod_select_webform_component_update($component) {
+  dpm($component, __FUNCTION__ . ': component');
+}
