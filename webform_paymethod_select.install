@@ -1,9 +1,8 @@
 <?php
 /**
- * webform_component_paymethod_select.install
+ * @file
  *
  * @author    Matthias Weiss <matthias@more-onion.com>
- * @copyright Copyright (c) 2013 copyright
  */
 
 /**
@@ -15,11 +14,11 @@
  * the webform submit handler so our payment methods can redirect
  * in the payment->execute() call
  */
-function webform_component_paymethod_select_enable() {
+function webform_paymethod_select_enable() {
   db_query(<<<EOS
     UPDATE system a
       INNER JOIN system b
-        ON  a.name = 'webform_component_paymethod_select'
+        ON  a.name = 'webform_paymethod_select'
         AND b.name = 'webform'
       SET a.weight = b.weight + 1
 EOS

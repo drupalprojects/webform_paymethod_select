@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\webform_component_paymethod_select;
+namespace Drupal\webform_paymethod_select;
 
 class WebformPaymentContext implements PaymentContextInterface {
   protected $webform;
