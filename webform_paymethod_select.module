@@ -205,7 +205,6 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
 
         _webform_paymethod_select_get_payment_method_form($element, $form_state, $method_name);
 
-
         $form_element_name = webform_paymethod_select_clean_name($payment->method->controller->name);
         $element['payment_method_all_forms'][$form_element_name]['#states'] = array(
           'visible' => array(
