@@ -6,3 +6,6 @@ dependencies[] = little_helpers
 dependencies[] = payment (>1.5)
 dependencies[] = psr0
 dependencies[] = webform
+
+files[] = lib/PaymentContextInterface.php
+files[] = lib/WebformPaymentContext.php

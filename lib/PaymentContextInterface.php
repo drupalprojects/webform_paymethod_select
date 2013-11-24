@@ -4,8 +4,6 @@ namespace Drupal\webform_paymethod_select;
 
 interface PaymentContextInterface {
 
-  public function getEditForm();
-
   public function collectContextData();
 
   public function getLineItems();
@@ -25,4 +23,6 @@ interface PaymentContextInterface {
    * @return url
    */
   public function getErrorUrl();
+
+  public static function getEditForm(array $component);
 }

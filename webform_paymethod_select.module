@@ -14,8 +14,8 @@ interface PaymentRecurrentController {
  */
 function webform_paymethod_select_webform_component_info() {
   $components['paymethod_select'] = array(
-    'label'       => t('Donation Payment Selector'),
-    'description' => t('Adds a selectable list of payment methods for a donation webform.'),
+    'label'       => t('Payment Selector'),
+    'description' => t('Adds a selectable list of payment methods for a webform.'),
     'features'    => array(
       'default_value' => FALSE,
       'required'      => TRUE,
@@ -52,8 +52,8 @@ function webform_paymethod_select_payment_finish(Payment $payment) {
  */
 function webform_paymethod_select_create_payment($line_item_descr = 'Default Line Item', $payment_descr = 'Default Payment') {
   $line_item = new PaymentLineItem(array(
-    'name'        => 'donation',
-    'description' => t('Donation'),
+    'name'        => 'Default line item',
+    'description' => t('Default Line Item'),
     'amount'      => 0,
     'quantity'    => 1,
     'tax_rate'    => 0
@@ -61,7 +61,7 @@ function webform_paymethod_select_create_payment($line_item_descr = 'Default Lin
 
   $payment = new Payment(array(
     'currency_code'   => 'EUR',
-    'description'     => t('Donation'),
+    'description'     => t('Default Payment'),
     'finish_callback' => 'webform_paymethod_select_payment_finish',
   ));
 

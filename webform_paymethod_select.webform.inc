@@ -19,7 +19,7 @@ function _webform_defaults_paymethod_select() {
     'weight'    => 0,
     'extra' => array(
       'payment_description'      => 'Default Payment',
-      'selected_payment_methods' => NULL,
+      'selected_payment_methods' => array(),
       'payment_line_items'       => array(),
       'private'                  => FALSE,
     ),
@@ -46,6 +46,8 @@ function _webform_paymethod_select_payment_method_options() {
   );
   //$payment = webform_paymethod_select_create_payment();
 
+  $payment_method_options = array();
+
   foreach ($payment->availablePaymentMethods() as $pmid => $payment_method) {
     $payment_method_options[(int) $pmid] = $payment_method->title_generic;
   }
@@ -57,6 +59,17 @@ function _webform_paymethod_select_payment_method_options() {
  * Implements _webform_edit_[component]().
  */
 function _webform_edit_paymethod_select($component) {
+
+  //dpm($component, 'component');
+
+  $settings = drupal_array_merge_deep(
+    array(
+      'payment_description' => 'Default Payment',
+      'selected_payment_methods' => array(),
+      'selected_context_class' => 'WebformPaymentContext',
+    ),
+    $component['extra']
+  );
 
   $form = array(
     'extra' => array(
@@ -76,28 +89,51 @@ function _webform_edit_paymethod_select($component) {
     '#description'   => 'Select 1 or more payment methods that will be available for seletion to the user.',
     //'#options'       => _webform_paymethod_select_payment_method_options($component),
     '#options'       => _webform_paymethod_select_payment_method_options(),
-    '#default_value' => array_keys($component['extra']['selected_payment_methods']),
+    '#default_value' => array_keys($settings['selected_payment_methods']),
   );
 
   $available_context_classes = array();
-  foreach (get_declared_classes() as $className) {
-    if (in_array('PaymentContextInterface', class_implements($className))) {
-      $available_context_classes[$className] = $className;
+  $query = db_query(<<<SQL
+    SELECT name, filename
+      FROM {registry}
+        WHERE type = 'class'
+SQL
+  );
+
+  while ($row = $query->fetch()) {
+    $classNameWithoutNamespace = $className = $row->name;
+    $path = DRUPAL_ROOT . '/' . $row->filename;
+    if (   file_exists($path) == TRUE
+        && is_readable($path) == TRUE) {
+      $handle = fopen($path, 'r');
+      while ($line = fgets($handle)) {
+        $namespace = array();
+        if (preg_match('/^namespace[[:blank:]]*(.*);$/', $line, $namespace) == 1) {
+          $className = $namespace[1] . '\\' . $className;
+          break;
+        }
+      }
+      fclose($handle);
+    }
+    if (in_array('Drupal\\webform_paymethod_select\\PaymentContextInterface', class_implements($className))) {
+      $available_context_classes[$className] = $classNameWithoutNamespace;
     }
   }
+
+  dpm($available_context_classes, 'available context classes');
 
   $form['extra']['selected_context_class'] = array(
     '#title'         => t('Selected Payment Context Class'),
     '#type'          => 'select',
     '#multiple'      => TRUE,
     '#description'   => 'Select 1 of the available classes that provide a payment context.',
-    '#options'       => $available_context_classes
-    '#default_value' => array_keys($component['extra']['selected_context_class']),
+    '#options'       => $available_context_classes,
+    '#default_value' => $settings['selected_context_class'],
   );
 
   foreach ($available_context_classes as $context_class) {
-    $context = new $context_class($component);
-    $form['extra']['context_class_forms'][$context_class] = $contex->getEditForm();
+    //$form['extra']['context_class_forms'][$context_class] = Drupal\webform_paymethod_select\$context_class::getEditForm($component);
+    $form['extra']['context_class_forms'][$context_class] = call_user_func(array($context_class, 'getEditForm'), $component);
   }
 
   return $form;
