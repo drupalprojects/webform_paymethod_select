@@ -25,4 +25,6 @@ interface PaymentContextInterface {
   public function getErrorUrl();
 
   public static function getEditForm(array $component);
+
+  public static function lineItemFormProcessAlter($element);
 }

@@ -501,3 +501,28 @@ function webform_paymethod_select_webform_component_insert($component) {
 function webform_paymethod_select_webform_component_update($component) {
   dpm($component, __FUNCTION__ . ': component');
 }
+
+function webform_paymethod_select_element_info_alter(&$element) {
+  //dpm(__FUNCTION__);
+  if (isset($element['payment_line_item']) == TRUE) {
+    $element['payment_line_item']['#process'][] = 'webform_paymethod_select_element_process_line_item';
+  }
+}
+
+function webform_paymethod_select_element_process_line_item(array $element, array &$form_state, array $form) {
+  dpm(__FUNCTION__);
+  //dpm($form_state, 'form_state');
+  //dpm($form, 'form');
+  //dpm($element, 'element');
+
+  if ($form['#id'] == 'webform-component-edit-form') {
+    if (isset($form_state['values']['extra']['selected_context_class']) == TRUE) {
+      $context_class = $form_state['values']['extra']['selected_context_class'];
+      $context_class = array_shift($context_class);
+      //dpm($context_class, 'context class');
+      $element = call_user_func(array($context_class, 'lineItemFormProcessAlter'), $element);
+    }
+  }
+
+  return $element;
+}

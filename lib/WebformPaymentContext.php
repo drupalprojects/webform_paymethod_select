@@ -41,13 +41,13 @@ class WebformPaymentContext implements PaymentContextInterface {
 
   public static function getEditForm(array $component) {
 
-    dpm($component, 'component');
+    //dpm($component, 'component');
     $node = node_load($component['nid']);
 
     $settings = drupal_array_merge_deep(
       array(
         'line_items' => NULL,
-        'currency_code' => NULL,
+        'currency_code' => 'EUR',
         'amount' => array(
           'component_or_fixed' => 'fixed',
           'fixed' => NULL,
@@ -55,14 +55,6 @@ class WebformPaymentContext implements PaymentContextInterface {
         ),
       ),
       $component['extra']
-    );
-
-    $form['line_items'] = array(
-      '#title'         => t('Line items'),
-      '#type'          => 'payment_line_item',
-      '#cardinality'   => 0,
-      '#default_value' => $settings['line_items'],
-      '#required'      => TRUE,
     );
 
     include_once drupal_get_path('module', 'webform_paymethod_select') . '/currency_codes.inc.php';
@@ -76,40 +68,60 @@ class WebformPaymentContext implements PaymentContextInterface {
       '#default_value' => $settings['currency_code'],
     );
 
-    $form['amount'] = array(
-      '#title' => t('Payment Amount'),
-      '#type'  => 'fieldset',
+
+    $form['line_items'] = array(
+      '#title'         => t('Line items'),
+      '#type'          => 'payment_line_item',
+      '#cardinality'   => 0,
+      '#default_value' => $settings['line_items'],
+      '#required'      => TRUE,
+      '#currency_code' => $settings['currency_code'],
     );
 
-    $form['amount']['component_or_fixed'] = array(
-      '#title' => t('Choose how to set the amount for the line item(s)'),
-      '#type'  => 'radios',
-      '#default_value' => $settings['amount']['component_or_fixed'],
-      '#description' => t('You can select the webform component from which to read the amount or specify a fixed value here.'),
-    );
-
-    $form['amount']['component_or_fixed']['#options'] = array(
-      'fixed'  => t('Set fixed amount'),
-      'component' => t('Select the component of this webform from which to read the amount'),
-    );
-
-    $options = webform_component_list($node, FALSE);
-
-    $form['amount']['fixed'] = array(
-      '#type' => 'fieldset',
-      '#default_value' => $settings['amount']['fixed'],
-      //'#weight' => 6,
-    );
-
-    $form['amount']['component'] = array(
-      '#type' => 'select',
-      '#default_value' => $settings['amount']['component'],
-      '#options' => empty($options) ? array('' => t('No available components')) : $options,
-      '#disabled' => empty($options) ? TRUE : FALSE,
-      //'#weight' => 6,
-    );
 
     return $form;
+  }
+
+  public static function lineItemFormProcessAlter($element) {
+    dpm(__FUNCTION__);
+    $webform_component_list = webform_component_list($node, FALSE);
+
+    foreach($element as $key => $value) {
+
+      if (strpos($key, 'container_') === 0) {
+        $component_or_fixed = array(
+          'component_or_fixed' => array(
+            '#title' => t('Choose how to set the amount for the line item(s)'),
+            '#type'  => 'radios',
+            '#default_value' => $settings['amount']['component_or_fixed'],
+            '#description' => t('You can select the webform component from which to read the amount or specify a fixed value here.'),
+            '#options' => array(
+              'fixed'  => t('Set fixed amount'),
+              'component' => t('Select the component of this webform from which to read the amount'),
+            ),
+          ),
+        );
+
+        array_unshift($element[$key], $component_or_fixed);
+
+        $element[$key]['amount'] = array(
+          'fixed' => array(
+            '#type' => 'fieldset',
+            '#default_value' => $settings['amount']['fixed'],
+            //'#weight' => 6,
+          ),
+          'component' => array(
+            '#type' => 'select',
+            '#default_value' => $settings['amount']['component'],
+            '#options' => empty($webform_component_list) ? array('' => t('No available components')) : $$webform_component_list,
+            '#disabled' => empty($webform_component_list) ? TRUE : FALSE,
+            //'#weight' => 6,
+          ),
+        );
+      }
+    }
+
+    return $element;
   }
 
   public function collectContextData() {

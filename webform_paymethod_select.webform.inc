@@ -66,7 +66,7 @@ function _webform_edit_paymethod_select($component) {
     array(
       'payment_description' => 'Default Payment',
       'selected_payment_methods' => array(),
-      'selected_context_class' => 'WebformPaymentContext',
+      'selected_context_class' => 'Drupal\webform_paymethod_select\WebformPaymentContext',
     ),
     $component['extra']
   );
@@ -131,9 +131,9 @@ SQL
     '#default_value' => $settings['selected_context_class'],
   );
 
-  foreach ($available_context_classes as $context_class) {
+  foreach ($available_context_classes as $context_class => $context_class_wo_namespace) {
     //$form['extra']['context_class_forms'][$context_class] = Drupal\webform_paymethod_select\$context_class::getEditForm($component);
-    $form['extra']['context_class_forms'][$context_class] = call_user_func(array($context_class, 'getEditForm'), $component);
+    $form['extra']['context_class_forms'][$context_class_wo_namespace] = call_user_func(array($context_class, 'getEditForm'), $component);
   }
 
   return $form;
