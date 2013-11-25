@@ -82,8 +82,12 @@ class WebformPaymentContext implements PaymentContextInterface {
     return $form;
   }
 
-  public static function lineItemFormProcessAlter($element) {
+  public static function lineItemFormProcessAlter(&$element, &$form, &$form_state) {
     dpm(__FUNCTION__);
+    dpm($element, 'element');
+    //dpm($form, 'form');
+    //dpm($form_state, 'form_state');
+    $node = node_load($form['nid']['#value']);
     $webform_component_list = webform_component_list($node, FALSE);
 
     foreach($element as $key => $value) {
@@ -91,11 +95,11 @@ class WebformPaymentContext implements PaymentContextInterface {
       if (strpos($key, 'container_') === 0) {
         $component_or_fixed = array(
           'component_or_fixed' => array(
-            '#title' => t('Choose how to set the amount for the line item(s)'),
-            '#type'  => 'radios',
-            '#default_value' => $settings['amount']['component_or_fixed'],
-            '#description' => t('You can select the webform component from which to read the amount or specify a fixed value here.'),
-            '#options' => array(
+            '#title'         => t('Choose how to set the amount for the line item(s)'),
+            '#type'          => 'radios',
+            '#default_value' => 'fixed', //$settings['amount']['component_or_fixed'],
+            '#description'   => t('You can select the webform component from which to read the amount or specify a fixed value here.'),
+            '#options'       => array(
               'fixed'  => t('Set fixed amount'),
               'component' => t('Select the component of this webform from which to read the amount'),
             ),
@@ -107,13 +111,13 @@ class WebformPaymentContext implements PaymentContextInterface {
         $element[$key]['amount'] = array(
           'fixed' => array(
             '#type' => 'fieldset',
-            '#default_value' => $settings['amount']['fixed'],
+            '#default_value' => NULL, //$settings['amount']['fixed'],
             //'#weight' => 6,
           ),
           'component' => array(
             '#type' => 'select',
-            '#default_value' => $settings['amount']['component'],
-            '#options' => empty($webform_component_list) ? array('' => t('No available components')) : $$webform_component_list,
+            '#default_value' => NULL, //$settings['amount']['component'],
+            '#options' => empty($webform_component_list) ? array('' => t('No available components')) : $webform_component_list,
             '#disabled' => empty($webform_component_list) ? TRUE : FALSE,
             //'#weight' => 6,
           ),

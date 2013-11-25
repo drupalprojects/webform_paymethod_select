@@ -124,9 +124,10 @@ SQL
 
   $form['extra']['selected_context_class'] = array(
     '#title'         => t('Selected Payment Context Class'),
-    '#type'          => 'select',
-    '#multiple'      => TRUE,
     '#description'   => 'Select 1 of the available classes that provide a payment context.',
+    '#type'          => 'select',
+    '#multiple'      => FALSE,
+    '#required'      => TRUE,
     '#options'       => $available_context_classes,
     '#default_value' => $settings['selected_context_class'],
   );

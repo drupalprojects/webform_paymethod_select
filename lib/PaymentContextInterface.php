@@ -26,5 +26,5 @@ interface PaymentContextInterface {
 
   public static function getEditForm(array $component);
 
-  public static function lineItemFormProcessAlter($element);
+  public static function lineItemFormProcessAlter(&$element, &$form, &$form_state);
 }

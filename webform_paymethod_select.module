@@ -517,10 +517,20 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
 
   if ($form['#id'] == 'webform-component-edit-form') {
     if (isset($form_state['values']['extra']['selected_context_class']) == TRUE) {
+      //dpm($form_state['values']['extra']['selected_context_class'], 'context class');
       $context_class = $form_state['values']['extra']['selected_context_class'];
-      $context_class = array_shift($context_class);
+      if (is_array($context_class) == TRUE) {
+        $context_class = array_shift($context_class);
+      }
       //dpm($context_class, 'context class');
-      $element = call_user_func(array($context_class, 'lineItemFormProcessAlter'), $element);
+      $element = call_user_func_array(
+        array($context_class, 'lineItemFormProcessAlter'),
+        array(
+          &$element,
+          &$form,
+          &$form_state,
+        )
+      );
     }
   }
 
