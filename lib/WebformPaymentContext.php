@@ -41,21 +41,17 @@ class WebformPaymentContext implements PaymentContextInterface {
 
   public static function getEditForm(array $component) {
 
-    //dpm($component, 'component');
+    dpm($component, 'component');
     $node = node_load($component['nid']);
 
     $settings = drupal_array_merge_deep(
       array(
-        'line_items' => NULL,
         'currency_code' => 'EUR',
-        'amount' => array(
-          'component_or_fixed' => 'fixed',
-          'fixed' => NULL,
-          'component' => NULL,
-        ),
+        'line_items'    => NULL,
       ),
-      $component['extra']
+      $component['extra']['context_settings']
     );
+    dpm($settings, 'settings');
 
     include_once drupal_get_path('module', 'webform_paymethod_select') . '/currency_codes.inc.php';
 
@@ -78,7 +74,6 @@ class WebformPaymentContext implements PaymentContextInterface {
       '#currency_code' => $settings['currency_code'],
     );
 
-
     return $form;
   }
 
@@ -93,7 +88,7 @@ class WebformPaymentContext implements PaymentContextInterface {
     foreach($element as $key => $value) {
 
       if (strpos($key, 'container_') === 0) {
-        $component_or_fixed = array(
+        $element[$key] = array(
           'component_or_fixed' => array(
             '#title'         => t('Choose how to set the amount for the line item(s)'),
             '#type'          => 'radios',
@@ -104,13 +99,11 @@ class WebformPaymentContext implements PaymentContextInterface {
               'component' => t('Select the component of this webform from which to read the amount'),
             ),
           ),
-        );
-
-        array_unshift($element[$key], $component_or_fixed);
+        ) + $element[$key];
 
         $element[$key]['amount'] = array(
           'fixed' => array(
-            '#type' => 'fieldset',
+            '#type' => 'texfield',
             '#default_value' => NULL, //$settings['amount']['fixed'],
             //'#weight' => 6,
           ),

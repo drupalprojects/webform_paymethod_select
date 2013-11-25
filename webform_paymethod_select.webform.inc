@@ -49,7 +49,7 @@ function _webform_paymethod_select_payment_method_options() {
   $payment_method_options = array();
 
   foreach ($payment->availablePaymentMethods() as $pmid => $payment_method) {
-    $payment_method_options[(int) $pmid] = $payment_method->title_generic;
+    $payment_method_options[$pmid] = $payment_method->title_generic;
   }
 
   return $payment_method_options;
@@ -70,6 +70,8 @@ function _webform_edit_paymethod_select($component) {
     ),
     $component['extra']
   );
+  //$settings['selected_payment_methods'] = array_combine($settings['selected_payment_methods'], $settings['selected_payment_methods']);
+  //dpm($settings, 'settings');
 
   $form = array(
     'extra' => array(
@@ -82,6 +84,8 @@ function _webform_edit_paymethod_select($component) {
     )
   );
 
+  //dpm( _webform_paymethod_select_payment_method_options(), 'payment options');
+
   $form['extra']['selected_payment_methods'] = array(
     '#title'         => t('Selected Payment Methods'),
     '#type'          => 'select',
@@ -89,7 +93,10 @@ function _webform_edit_paymethod_select($component) {
     '#description'   => 'Select 1 or more payment methods that will be available for seletion to the user.',
     //'#options'       => _webform_paymethod_select_payment_method_options($component),
     '#options'       => _webform_paymethod_select_payment_method_options(),
-    '#default_value' => array_keys($settings['selected_payment_methods']),
+    //'#default_value' => array_keys($settings['selected_payment_methods']),
+    //'#default_value' => array_keys($component['extra']['selected_payment_methods']),
+    //'#default_value' => 4,
+    '#default_value' => $settings['selected_payment_methods'],
   );
 
   $available_context_classes = array();
@@ -120,7 +127,7 @@ SQL
     }
   }
 
-  dpm($available_context_classes, 'available context classes');
+  //dpm($available_context_classes, 'available context classes');
 
   $form['extra']['selected_context_class'] = array(
     '#title'         => t('Selected Payment Context Class'),
@@ -134,7 +141,7 @@ SQL
 
   foreach ($available_context_classes as $context_class => $context_class_wo_namespace) {
     //$form['extra']['context_class_forms'][$context_class] = Drupal\webform_paymethod_select\$context_class::getEditForm($component);
-    $form['extra']['context_class_forms'][$context_class_wo_namespace] = call_user_func(array($context_class, 'getEditForm'), $component);
+    $form['extra']['context_settings'] = call_user_func(array($context_class, 'getEditForm'), $component);
   }
 
   return $form;
