@@ -9,3 +9,4 @@ dependencies[] = webform
 
 files[] = lib/PaymentContextInterface.php
 files[] = lib/WebformPaymentContext.php
+files[] = lib/PaymethodLineItem.php

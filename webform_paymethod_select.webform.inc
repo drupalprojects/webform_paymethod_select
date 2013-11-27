@@ -64,14 +64,15 @@ function _webform_edit_paymethod_select($component) {
 
   $settings = drupal_array_merge_deep(
     array(
-      'payment_description' => 'Default Payment',
+      'payment_description'      => 'Default Payment',
       'selected_payment_methods' => array(),
-      'selected_context_class' => 'Drupal\webform_paymethod_select\WebformPaymentContext',
+      'currency_code'            => 'EUR',
+      'line_items'               => NULL,
     ),
     $component['extra']
   );
   //$settings['selected_payment_methods'] = array_combine($settings['selected_payment_methods'], $settings['selected_payment_methods']);
-  //dpm($settings, 'settings');
+  dpm($settings['line_items'], 'settings');
 
   $form = array(
     'extra' => array(
@@ -99,50 +100,28 @@ function _webform_edit_paymethod_select($component) {
     '#default_value' => $settings['selected_payment_methods'],
   );
 
-  $available_context_classes = array();
-  $query = db_query(<<<SQL
-    SELECT name, filename
-      FROM {registry}
-        WHERE type = 'class'
-SQL
-  );
+  dpm($component, 'component');
+  $node = node_load($component['nid']);
 
-  while ($row = $query->fetch()) {
-    $classNameWithoutNamespace = $className = $row->name;
-    $path = DRUPAL_ROOT . '/' . $row->filename;
-    if (   file_exists($path) == TRUE
-        && is_readable($path) == TRUE) {
-      $handle = fopen($path, 'r');
-      while ($line = fgets($handle)) {
-        $namespace = array();
-        if (preg_match('/^namespace[[:blank:]]*(.*);$/', $line, $namespace) == 1) {
-          $className = $namespace[1] . '\\' . $className;
-          break;
-        }
-      }
-      fclose($handle);
-    }
-    if (in_array('Drupal\\webform_paymethod_select\\PaymentContextInterface', class_implements($className))) {
-      $available_context_classes[$className] = $classNameWithoutNamespace;
-    }
-  }
+  include_once drupal_get_path('module', 'webform_paymethod_select') . '/currency_codes.inc.php';
 
-  //dpm($available_context_classes, 'available context classes');
-
-  $form['extra']['selected_context_class'] = array(
-    '#title'         => t('Selected Payment Context Class'),
-    '#description'   => 'Select 1 of the available classes that provide a payment context.',
+  $form['extra']['currency_code'] = array(
     '#type'          => 'select',
+    '#title'         => t('Select a currency code'),
     '#multiple'      => FALSE,
-    '#required'      => TRUE,
-    '#options'       => $available_context_classes,
-    '#default_value' => $settings['selected_context_class'],
+    '#descriptions'  => t('Select the currency code for this payment.'),
+    '#options'       => $currency_codes,
+    '#default_value' => $settings['currency_code'],
   );
 
-  foreach ($available_context_classes as $context_class => $context_class_wo_namespace) {
-    //$form['extra']['context_class_forms'][$context_class] = Drupal\webform_paymethod_select\$context_class::getEditForm($component);
-    $form['extra']['context_settings'] = call_user_func(array($context_class, 'getEditForm'), $component);
-  }
+  $form['extra']['line_items'] = array(
+    '#title'         => t('Line items'),
+    '#type'          => 'payment_line_item',
+    '#cardinality'   => 0,
+    '#default_value' => $settings['line_items'],
+    '#required'      => TRUE,
+    '#currency_code' => $settings['currency_code'],
+  );
 
   return $form;
 }

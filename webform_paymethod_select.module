@@ -491,16 +491,17 @@ function webform_paymethod_select_webform_submission_presave($node, &$submission
 
 function webform_paymethod_select_webform_component_presave(&$component) {
 
-  dpm($component, __FUNCTION__ . ': component');
+  //dpm($component, __FUNCTION__ . ': component');
 }
 
 function webform_paymethod_select_webform_component_insert($component) {
-  dpm($component, __FUNCTION__ . ': component');
+  //dpm($component, __FUNCTION__ . ': component');
 }
 
 function webform_paymethod_select_webform_component_update($component) {
-  dpm($component, __FUNCTION__ . ': component');
+  //dpm($component, __FUNCTION__ . ': component');
 }
+
 
 function webform_paymethod_select_element_info_alter(&$element) {
   //dpm(__FUNCTION__);
@@ -511,27 +512,70 @@ function webform_paymethod_select_element_info_alter(&$element) {
 }
 
 function webform_paymethod_select_element_process_line_item(array $element, array &$form_state, array $form) {
-  dpm(__FUNCTION__);
+  //dpm(__FUNCTION__);
   //dpm($form_state, 'form_state');
   //dpm($form, 'form');
   //dpm($element, 'element');
 
   if ($form['#id'] == 'webform-component-edit-form') {
-    if (isset($form_state['values']['extra']['selected_context_class']) == TRUE) {
-      //dpm($form_state['values']['extra']['selected_context_class'], 'context class');
-      $context_class = $form_state['values']['extra']['selected_context_class'];
-      if (is_array($context_class) == TRUE) {
-        $context_class = array_shift($context_class);
+    //dpm(__FUNCTION__);
+    dpm($element, 'element');
+    //dpm($form, 'form');
+    //dpm($form_state, 'form_state');
+    $node = node_load($form['nid']['#value']);
+    $webform_component_list = webform_component_list($node, FALSE);
+    dpm($node, 'node');
+    foreach ($webform_component_list as $cid => $component) {
+      if ($node->webform['components'][$cid]['type'] == 'paymethod_select') {
+        unset($webform_component_list[$cid]);
       }
-      //dpm($context_class, 'context class');
-      $element = call_user_func_array(
-        array($context_class, 'lineItemFormProcessAlter'),
-        array(
-          &$element,
-          &$form,
-          &$form_state,
-        )
-      );
+    }
+    dpm($webform_component_list, 'webform_component_list');
+
+    foreach($element as $key => &$value) {
+
+      if (strpos($key, 'container_') === 0) {
+        $index = str_replace('container_', '', $key);
+        dpm($index, 'index');
+        $defaults = NULL;
+        if (   isset($element['#default_value'][$index]) == TRUE
+            && is_object($element['#default_value'][$index]) == TRUE) {
+          $defaults = $element['#default_value'][$index];
+        }
+        else {
+          $defaults = new Drupal\webform_paymethod_select\PaymethodLineItem(array());
+        }
+
+        $defaults->amount = ($defaults->amount == 0) ? '' : $defaults->amount;
+
+        dpm($defaults, 'defaults');
+        $value = array(
+          'component_or_fixed' => array(
+            '#title'         => t('Choose how to set the amount for the line item(s)'),
+            '#type'          => 'radios',
+            '#default_value' => $defaults->component_or_fixed,
+            '#description'   => t('You can select the webform component from which to read the amount or specify a fixed value here.'),
+            '#options'       => array(
+              'fixed'  => t('Set fixed amount'),
+              'component' => t('Select the component of this webform from which to read the amount'),
+            ),
+          ),
+        ) + $value;
+
+        $value['amount'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Amount'),
+          '#required' => FALSE,
+          '#default_value' => $defaults->amount,
+        );
+        $value['amount_component'] = array(
+          '#type' => 'select',
+          '#default_value' => $defaults->amount_component,
+          '#options' => empty($webform_component_list) ? array('' => t('No available components')) : $webform_component_list,
+          '#disabled' => empty($webform_component_list) ? TRUE : FALSE,
+        );
+        dpm($value, 'value');
+      }
     }
   }
 
@@ -539,4 +583,53 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
 }
 
 function webform_paymethod_select_element_valditate_line_item(array $element, array &$form_state) {
+  //dpm($element);
+  //dpm($form_state);
+  //unset($element['#default_value']['add_more']);
+  //unset($form_state['values']['extra']['line_items']['add_more']);
+
+  $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
+  dpm($values, 'values');
+  // Don't let the submit button's value be validated.
+  unset($values['add_more']);
+  $line_items = array();
+  foreach ($values as $container => $line_item_data) {
+    // ignore empty line items
+    if ($line_item_data['quantity'] === '' || $line_item_data['tax_rate'] === '') {
+      break;
+    }
+    // They're not all empty, so make sure they all contain input.
+    else {
+      // Keep track
+      $errors = array_fill_keys(array_keys($element['#value']), FALSE);
+      foreach ($line_item_data as $property => $value) {
+        if ($property != 'amount' && !strlen($value)) {
+          form_error($element[$container][$property], t('%title is required, or leave all fields for this line item empty.', array(
+            '%title' => $element[$container][$property]['#title'],
+          )));
+        }
+      }
+    }
+
+    // Validate quantity.
+    if (preg_match('#\D#', $line_item_data['quantity'])) {
+      form_error($element[$container]['quantity'], t('Quantity should be a positive integer.'));
+    }
+
+    // Validate tax rate.
+    $tax_rate = str_replace(',', '.', $line_item_data['tax_rate']);
+    if (!is_numeric($tax_rate) || $tax_rate < 0) {
+      form_error($element, t('Tax rate must be a positive percentage.'));
+    }
+    else {
+      $line_item_data['tax_rate'] = $tax_rate / 100;
+    }
+
+    // Convert the raw input to a PaymentLineItem object.
+    $line_item_data['amount'] = (float) $line_item_data['amount'];
+    $line_item_data['quantity'] = (int) $line_item_data['quantity'];
+    $line_item_data['tax_rate'] = (float) $line_item_data['tax_rate'];
+    $line_items[] = new Drupal\webform_paymethod_select\PaymethodLineItem($line_item_data);
+  }
+  form_set_value($element, $line_items, $form_state);
 }
