@@ -517,65 +517,63 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
   //dpm($form, 'form');
   //dpm($element, 'element');
 
-  if ($form['#id'] == 'webform-component-edit-form') {
-    //dpm(__FUNCTION__);
-    dpm($element, 'element');
-    //dpm($form, 'form');
-    //dpm($form_state, 'form_state');
-    $node = node_load($form['nid']['#value']);
-    $webform_component_list = webform_component_list($node, FALSE);
-    dpm($node, 'node');
-    foreach ($webform_component_list as $cid => $component) {
-      if ($node->webform['components'][$cid]['type'] == 'paymethod_select') {
-        unset($webform_component_list[$cid]);
-      }
+  //dpm(__FUNCTION__);
+  //dpm($element, 'element');
+  //dpm($form, 'form');
+  //dpm($form_state, 'form_state');
+  $node = node_load($form['nid']['#value']);
+  $webform_component_list = webform_component_list($node, FALSE);
+  //dpm($node, 'node');
+  foreach ($webform_component_list as $cid => $component) {
+    if ($node->webform['components'][$cid]['type'] == 'paymethod_select') {
+      unset($webform_component_list[$cid]);
     }
-    dpm($webform_component_list, 'webform_component_list');
+  }
+  //dpm($webform_component_list, 'webform_component_list');
 
-    foreach($element as $key => &$value) {
+  foreach($element as $key => &$value) {
 
-      if (strpos($key, 'container_') === 0) {
-        $index = str_replace('container_', '', $key);
-        dpm($index, 'index');
-        $defaults = NULL;
-        if (   isset($element['#default_value'][$index]) == TRUE
-            && is_object($element['#default_value'][$index]) == TRUE) {
-          $defaults = $element['#default_value'][$index];
-        }
-        else {
-          $defaults = new Drupal\webform_paymethod_select\PaymethodLineItem(array());
-        }
-
-        $defaults->amount = ($defaults->amount == 0) ? '' : $defaults->amount;
-
-        dpm($defaults, 'defaults');
-        $value = array(
-          'component_or_fixed' => array(
-            '#title'         => t('Choose how to set the amount for the line item(s)'),
-            '#type'          => 'radios',
-            '#default_value' => $defaults->component_or_fixed,
-            '#description'   => t('You can select the webform component from which to read the amount or specify a fixed value here.'),
-            '#options'       => array(
-              'fixed'  => t('Set fixed amount'),
-              'component' => t('Select the component of this webform from which to read the amount'),
-            ),
-          ),
-        ) + $value;
-
-        $value['amount'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Amount'),
-          '#required' => FALSE,
-          '#default_value' => $defaults->amount,
-        );
-        $value['amount_component'] = array(
-          '#type' => 'select',
-          '#default_value' => $defaults->amount_component,
-          '#options' => empty($webform_component_list) ? array('' => t('No available components')) : $webform_component_list,
-          '#disabled' => empty($webform_component_list) ? TRUE : FALSE,
-        );
-        dpm($value, 'value');
+    if (strpos($key, 'container_') === 0) {
+      $index = str_replace('container_', '', $key);
+      //dpm($index, 'index');
+      $defaults = NULL;
+      if (   isset($element['#default_value'][$index]) == TRUE
+        && is_object($element['#default_value'][$index]) == TRUE) {
+        $defaults = $element['#default_value'][$index];
       }
+      else {
+        $defaults = new Drupal\webform_paymethod_select\PaymethodLineItem(array());
+      }
+
+      $defaults->amount = ($defaults->amount == 0) ? '' : $defaults->amount;
+
+      //dpm($defaults, 'defaults');
+      $value = array(
+        'component_or_fixed' => array(
+          '#title'         => t('Choose how to set the amount for the line item(s)'),
+          '#type'          => 'radios',
+          '#default_value' => $defaults->component_or_fixed,
+          '#description'   => t('You can select the webform component from which to read the amount or specify a fixed value here.'),
+          '#options'       => array(
+            'fixed'  => t('Set fixed amount'),
+            'component' => t('Select the component of this webform from which to read the amount'),
+          ),
+        ),
+      ) + $value;
+
+      $value['amount'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Amount'),
+        '#required' => FALSE,
+        '#default_value' => $defaults->amount,
+      );
+      $value['amount_component'] = array(
+        '#type' => 'select',
+        '#default_value' => $defaults->amount_component,
+        '#options' => empty($webform_component_list) ? array('' => t('No available components')) : $webform_component_list,
+        '#disabled' => empty($webform_component_list) ? TRUE : FALSE,
+      );
+      //dpm($value, 'value');
     }
   }
 
@@ -596,7 +594,7 @@ function webform_paymethod_select_element_valditate_line_item(array $element, ar
   foreach ($values as $container => $line_item_data) {
     // ignore empty line items
     if ($line_item_data['quantity'] === '' || $line_item_data['tax_rate'] === '') {
-      break;
+      continue;
     }
     // They're not all empty, so make sure they all contain input.
     else {
