@@ -15,7 +15,7 @@ interface PaymentRecurrentController {
 function webform_paymethod_select_webform_component_info() {
   $components['paymethod_select'] = array(
     'label'       => t('Payment Selector'),
-    'description' => t('Adds a selectable list of payment methods for a webform.'),
+    'description' => t('Provides a selectable list of payment methods for a webform.'),
     'features'    => array(
       'default_value' => FALSE,
       'required'      => TRUE,
@@ -50,7 +50,7 @@ function webform_paymethod_select_payment_finish(Payment $payment) {
  * Helper function used to create a payment object necessary for the
  * webform component paymethod_select
  */
-function webform_paymethod_select_create_payment($line_item_descr = 'Default Line Item', $payment_descr = 'Default Payment') {
+/*function webform_paymethod_select_create_payment($line_item_descr = 'Default Line Item', $payment_descr = 'Default Payment') {
   $line_item = new PaymentLineItem(array(
     'name'        => 'Default line item',
     'description' => t('Default Line Item'),
@@ -68,7 +68,7 @@ function webform_paymethod_select_create_payment($line_item_descr = 'Default Lin
   $payment->setLineItem($line_item);
 
   return $payment;
-}
+  }*/
 
 /**
  * Helper function to get a cleaned payment method controller name
@@ -111,7 +111,7 @@ function webform_paymethod_select_element_info() {
 /**
  * helper function to preload all forms defined by the individual payment methods
  */
-function _webform_paymethod_select_get_payment_method_form(&$element, &$form_state, $method_name) {
+function _webform_paymethod_select_get_payment_method_form(&$element, &$form_state, $method_name, $pmid) {
   $payment = $form_state['payment'];
 
   $form_element_name = webform_paymethod_select_clean_name($payment->method->controller->name);
@@ -123,6 +123,11 @@ function _webform_paymethod_select_get_payment_method_form(&$element, &$form_sta
     '#attributes'  => array('class' => array('payment-method-form')),
     '#collapsible' => FALSE,
     '#collapsed'   => FALSE,
+    '#states' => array(
+      'visible' => array(
+        '#payment-method-selector input' => array('value' => $pmid),
+      ),
+    ),
   );
 
   $form_elements_callback = $payment->method->controller->payment_configuration_form_elements_callback;
@@ -188,7 +193,7 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
         break;
       }
 
-      _webform_paymethod_select_get_payment_method_form($element, $form_state, $method_name);
+      _webform_paymethod_select_get_payment_method_form($element, $form_state, $method_name, $pmid);
 
       break;
 
@@ -203,14 +208,7 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
 
         $payment_method_options[$pmid] = t($method_name);
 
-        _webform_paymethod_select_get_payment_method_form($element, $form_state, $method_name);
-
-        $form_element_name = webform_paymethod_select_clean_name($payment->method->controller->name);
-        $element['payment_method_all_forms'][$form_element_name]['#states'] = array(
-          'visible' => array(
-            '#payment-method-selector input' => array('value' => $pmid),
-          )
-        );
+        _webform_paymethod_select_get_payment_method_form($element, $form_state, $method_name, $pmid);
 
         unset($payment->method);
       }
@@ -234,29 +232,41 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
  */
 function webform_paymethod_select_form_process_validate(array $element, array &$form_state) {
   $payment = $form_state['payment'];
+  $pmid    = (int) $element['#value']['payment_method_selector'];
 
-  if (empty($payment->method)) {
-    $pmid = (int) $element['#value']['payment_method_selector'];
+  if (   empty($payment->method) == TRUE
+      || $payment->method->pmid != $pmid) {
     $payment->method = entity_load_single('payment_method', $pmid);
     if ($payment->method->name === 'payment_method_unavailable') {
-      throw new Exception('Invalid Payment Method selected.');
+      throw new Exception(t('Invalid Payment Method selected.'));
     }
   }
 
-  $payment->context_data['context'] = \Drupal\webform_paymethod_select\WebformPaymentContext::fromNode($form_state['complete form']['#node']);
-  webform_paymethod_select_get_form_values($form_state);
+  if (empty($payment->context_data['context']) == TRUE) {
+    $node = webform_paymethod_select_get_node();
 
-  $form_elements_callback = $payment->method->controller->payment_configuration_form_elements_callback;
-  $form_element_name = webform_paymethod_select_clean_name($payment->method->controller->name);
+    dpm($node, __FUNCTION__ . ': node');
+    if (isset($node) == TRUE) {
+      $payment->context_data['context'] = new \Drupal\webform_paymethod_select\WebformPaymentContext($node->nid);
+    }
+    else {
+      throw new Exception(t('Can\'t retrieve node object necessary for form validation.'));
+    }
+  }
 
-  if (   function_exists($form_elements_callback . '_validate') == TRUE
-      && !empty($element['payment_method_all_forms'][$form_element_name])) {
-    $function = $form_elements_callback . '_validate';
-    $function(
-      $element['payment_method_all_forms'][$form_element_name],
+  $selected_method = webform_paymethod_select_clean_name($payment->method->controller->name);
+
+  $selected_method_validate_callback = $payment->method->controller->payment_configuration_form_elements_callback . '_validate';
+  if (   function_exists($selected_method_validate_callback) == TRUE
+      && !empty($element['payment_method_all_forms'][$selected_method])) {
+    $payment->context_data['context']->setDataValue('pmid', $pmid);
+    $selected_method_validate_callback(
+      $element['payment_method_all_forms'][$selected_method],
       $form_state
     );
   }
+  dpm($element, __FUNCTION__ . ': element');
+  dpm($payment->context_data['context'], __FUNCTION__ . ': context');
 }
 
 /**
@@ -400,10 +410,43 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
           || $form_state['webform_completed']        == TRUE  /*multi page webform submit*/)) {
 
     $payment = &$form_state['payment'];
-    $payment->context_data['context']->setSubmission(
-      \Drupal\little_helpers\WebformSubmission::load($form['#node']->nid, $form_state['values']['details']['sid'])
-    );
-    webform_paymethod_select_get_form_values($form_state);
+    $node    = webform_paymethod_select_get_node();
+    $context = &$payment->context_data['context'];
+    dpm($node, __FUNCTION__ . ': node');
+    dpm($form_state, __FUNCTION__ . ': form_state');
+
+    if (isset($node) == TRUE) {
+      $sid            = isset($node->webform['sid']) ? $node->webform['sid'] : NULL;
+      $cid_2_form_key = array();
+      foreach ($node->webform['components'] as $component) {
+        $form_key             = $component['form_key'];
+        $cid                  = (int) $component['cid'];
+        $cid_2_form_key[$cid] = $form_key;
+        if ($component['type'] == 'paymethod_select') {
+          continue;
+        }
+        if (isset($form_state['values'][$form_key])) {
+          $context->setDataValue($form_key, $form_state['values'][$form_key]);
+        }
+        elseif (isset($form_state['values']['submitted'][$cid]) == TRUE) {
+          $context->setDataValue($form_key, $form_state['values']['submitted'][$cid]);
+        }
+        elseif (isset($form_state['values']['submitted'][$form_key]) == TRUE) {
+          $context->setDataValue($form_key, $form_state['values']['submitted'][$form_key]);
+        }
+        elseif (isset($form_state['storage']['submitted'][$cid]) == TRUE) {
+          $context->setDataValue($form_key, $form_state['storage']['submitted'][$cid]);
+        }
+      }
+
+      $context->setSid($sid);
+      $context->setCid2FormKey($cid_2_form_key);
+      dpm($payment->context_data, __FUNCTION__ . ': context_data');
+    }
+    //    $payment->context_data['context']->setSubmission(
+    //  \Drupal\little_helpers\WebformSubmission::load($form['#node']->nid, $form_state['values']['details']['sid'])
+    //);
+    //webform_paymethod_select_get_form_values($form_state);
     entity_save('payment', $payment);
 
     // Execute the payment.
@@ -439,6 +482,7 @@ function webform_paymethod_select_get_webform_value(&$form_state, $form_key) {
  * and store them into $payment->method_data to be available for the payment
  * methods "execute" method
  */
+/*
 function webform_paymethod_select_get_form_values(&$form_state) {
 
   $payment     = &$form_state['payment'];
@@ -471,6 +515,7 @@ function webform_paymethod_select_get_form_values(&$form_state) {
     $line_item->amount = (int) $method_data['donation_amount'];
   }
 }
+*/
 
 /**
  * Implements hook_webform_submission_presave().
@@ -506,7 +551,7 @@ function webform_paymethod_select_webform_component_update($component) {
 function webform_paymethod_select_element_info_alter(&$element) {
   //dpm(__FUNCTION__);
   if (isset($element['payment_line_item']) == TRUE) {
-    $element['payment_line_item']['#process'][] = 'webform_paymethod_select_element_process_line_item';
+    $element['payment_line_item']['#process'][]        = 'webform_paymethod_select_element_process_line_item';
     $element['payment_line_item']['#element_validate'] = array('webform_paymethod_select_element_valditate_line_item');
   }
 }
