@@ -4,23 +4,10 @@ namespace Drupal\webform_paymethod_select;
 
 interface PaymentContextInterface {
 
-  public function collectContextData();
+  public function setData(&$data);
 
-  public function getLineItems();
+  public function dataValue($key);
 
- /**
-   * Return an absolute URL to redirect the user to
-   * when the payment was successfull.
-   *
-   * @return url
-   */
-  public function getSuccessUrl();
+  public function dataValues(array $keys);
 
-  /**
-   * Return an absolute URL to redirect the user to
-   * when the payment was not successfull.
-   *
-   * @return url
-   */
-  public function getErrorUrl();
 }
