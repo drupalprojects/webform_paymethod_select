@@ -176,13 +176,4 @@ function _webform_render_paymethod_select($component, $value = NULL, $filter = T
   return $element;
 }
 
-/*
-function _webform_submit_paymethod_select($component, $value) {
-
-  dpm($component, __FUNCTION__ . ': component');
-  dpm($value, __FUNCTION__ . ': value');
-
-  return $value;
-}
-*/
 

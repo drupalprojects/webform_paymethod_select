@@ -47,30 +47,6 @@ function webform_paymethod_select_payment_finish(Payment $payment) {
 }
 
 /**
- * Helper function used to create a payment object necessary for the
- * webform component paymethod_select
- */
-/*function webform_paymethod_select_create_payment($line_item_descr = 'Default Line Item', $payment_descr = 'Default Payment') {
-  $line_item = new PaymentLineItem(array(
-    'name'        => 'Default line item',
-    'description' => t('Default Line Item'),
-    'amount'      => 0,
-    'quantity'    => 1,
-    'tax_rate'    => 0
-  ));
-
-  $payment = new Payment(array(
-    'currency_code'   => 'EUR',
-    'description'     => t('Default Payment'),
-    'finish_callback' => 'webform_paymethod_select_payment_finish',
-  ));
-
-  $payment->setLineItem($line_item);
-
-  return $payment;
-  }*/
-
-/**
  * Helper function to get a cleaned payment method controller name
  * this is necessary for controller names that include PHP namespaces
  */
@@ -140,14 +116,9 @@ function _webform_paymethod_select_get_payment_method_form(&$element, &$form_sta
  * form process function that was set in hook_element_info().
  */
 function webform_paymethod_select_form_process(array $element, array &$form_state, array &$form) {
-  /*if (empty($form_state['payment']) == TRUE) {
-    $payment = $form_state['payment'] = webform_paymethod_select_create_payment();
-  }
-  else {
-    $payment = $form_state['payment'];
-    }*/
+
   $payment = $form_state['payment'];
-  dpm($payment, __FUNCTION__ . ': payment');
+  //dpm($payment, __FUNCTION__ . ': payment');
 
   $element['#tree'] = TRUE;
 
@@ -245,7 +216,7 @@ function webform_paymethod_select_form_process_validate(array $element, array &$
   if (empty($payment->context_data['context']) == TRUE) {
     $node = webform_paymethod_select_get_node();
 
-    dpm($node, __FUNCTION__ . ': node');
+    //dpm($node, __FUNCTION__ . ': node');
     if (isset($node) == TRUE) {
       $payment->context_data['context'] = new \Drupal\webform_paymethod_select\WebformPaymentContext($node->nid);
     }
@@ -265,8 +236,8 @@ function webform_paymethod_select_form_process_validate(array $element, array &$
       $form_state
     );
   }
-  dpm($element, __FUNCTION__ . ': element');
-  dpm($payment->context_data['context'], __FUNCTION__ . ': context');
+  //dpm($element, __FUNCTION__ . ': element');
+  //dpm($payment->context_data['context'], __FUNCTION__ . ': context');
 }
 
 /**
@@ -301,28 +272,6 @@ function webform_paymethod_select_get_node(&$form = NULL) {
   return $node;
 }
 
-/*function _webform_paymethod_select_set_payment(&$form_state, &$form, $form_submit_handler = NULL) {
-  $node = webform_paymethod_select_get_node($form);
-
-  if (isset($node) == TRUE) {
-    foreach($node->webform['components'] as $component) {
-      if ($component['type'] == 'paymethod_select') {
-        dpm($component, 'component');
-        if (empty($form_state['payment']) == TRUE) {
-          dpm(__FUNCTION__ . ': $form_state[payment] ist leer');
-          $form_state['payment'] = webform_paymethod_select_create_payment();
-        }
-        //if (empty($component['extra']['payment']) == TRUE) {
-        //  dpm(__FUNCTION__ . ': $component[extra][payment] ist leer');
-        //  $component['extra']['payment']              = &$form_state['payment'];
-        //  $component['extra']['payment']->description = $component['extra']['payment_description'];
-        //  }
-
-        break;
-      }
-    }
-  }
-}*/
 function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL) {
 
   $line_items          = array();
@@ -330,19 +279,11 @@ function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL)
   $currency_code       = 'EUR';
 
   if ($component != NULL) {
-    dpm($component, __FUNCTION__ . ': component');
-    $line_items          = $component['extra']['payment_line_items'];
+    //dpm($component, __FUNCTION__ . ': component');
+    $line_items          = $component['extra']['line_items'];
     $payment_description = $component['extra']['payment_description'];
     $currency_code       = $component['extra']['currency_code'];
   }
-
-  /*$line_item = new PaymentLineItem(array(
-    'name'        => 'donation',
-    'description' => t('Donation'),
-    'amount'      => 0,
-    'quantity'    => 1,
-    'tax_rate'    => 0
-    ));*/
 
   $payment = new Payment(
     array(
@@ -355,7 +296,7 @@ function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL)
   foreach ($line_items as $line_item) {
     $payment->setLineItem($line_item);
   }
-
+  //dpm($payment, __FUNCTION__ . ': payment');
   $form_state['payment'] = $payment;
 }
 
@@ -367,7 +308,6 @@ function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL)
  */
 function webform_paymethod_select_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'form_builder_preview') {
-    //_webform_paymethod_select_set_payment($form_state, $form);
     _webform_paymethod_select_set_payment($form_state);
   }
 }
@@ -412,11 +352,11 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
     $payment = &$form_state['payment'];
     $node    = webform_paymethod_select_get_node();
     $context = &$payment->context_data['context'];
-    dpm($node, __FUNCTION__ . ': node');
-    dpm($form_state, __FUNCTION__ . ': form_state');
+    //dpm($node, __FUNCTION__ . ': node');
+    //dpm($form_state, __FUNCTION__ . ': form_state');
 
+    // retrieve all webform values and save them in the context
     if (isset($node) == TRUE) {
-      $sid            = isset($node->webform['sid']) ? $node->webform['sid'] : NULL;
       $cid_2_form_key = array();
       foreach ($node->webform['components'] as $component) {
         $form_key             = $component['form_key'];
@@ -439,14 +379,19 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
         }
       }
 
-      $context->setSid($sid);
+      $context->sid = isset($node->webform['sid']) ? $node->webform['sid'] : NULL;
       $context->setCid2FormKey($cid_2_form_key);
-      dpm($payment->context_data, __FUNCTION__ . ': context_data');
+      //dpm($payment->context_data, __FUNCTION__ . ': context_data');
     }
-    //    $payment->context_data['context']->setSubmission(
-    //  \Drupal\little_helpers\WebformSubmission::load($form['#node']->nid, $form_state['values']['details']['sid'])
-    //);
-    //webform_paymethod_select_get_form_values($form_state);
+
+    // handle setting the amount value in line items that were configured to
+    // not have a fixed amount
+    foreach ($payment->line_items as $line_item) {
+      if ($line_item->component_or_fixed == 'component') {
+        $line_item->amount = (float) $context->dataValue($context->cid2FormKey($line_item->amount_component));
+      }
+    }
+    //dpm($payment, __FUNCTION__ . ': payment');
     entity_save('payment', $payment);
 
     // Execute the payment.
@@ -477,45 +422,7 @@ function webform_paymethod_select_get_webform_value(&$form_state, $form_key) {
   }
 }
 
-/**
- * Helper functions to get the webform field values entered by the user
- * and store them into $payment->method_data to be available for the payment
- * methods "execute" method
- */
-/*
-function webform_paymethod_select_get_form_values(&$form_state) {
 
-  $payment     = &$form_state['payment'];
-  $method_data = &$payment->method_data;
-
-  $method_data += array(
-    'street_address'    => FALSE,
-    'zip_code'          => FALSE,
-    'city'              => FALSE,
-    'first_name'        => FALSE,
-    'last_name'         => FALSE,
-    'date_of_birth'     => FALSE,
-    'gender'            => FALSE,
-    'form_of_address'   => FALSE,
-    'title'             => FALSE,
-    'email'             => FALSE,
-    'donation_amount'   => FALSE,
-    'donation_interval' => FALSE,
-  );
-
-  // Get values for all form keys in method_data from either
-  // $form_state['storage'] or $form_state['values']
-  foreach ($method_data as $form_key => $value) {
-    $v = webform_paymethod_select_get_webform_value($form_state, $form_key);
-    if ($v) {
-      $method_data[$form_key] = $v;
-    }
-  }
-  foreach ($payment->line_items as $line_item) {
-    $line_item->amount = (int) $method_data['donation_amount'];
-  }
-}
-*/
 
 /**
  * Implements hook_webform_submission_presave().
@@ -533,20 +440,21 @@ function webform_paymethod_select_webform_submission_presave($node, &$submission
     }
   }
 }
-
-function webform_paymethod_select_webform_component_presave(&$component) {
-
-  //dpm($component, __FUNCTION__ . ': component');
+/**
+ * Implements hook_webform_submission_presave().
+ *
+ * our only chance to create a connection between payment and
+ * webform submission; we save it in the node object and fetch it
+ * later to safe into the context
+ */
+function webform_paymethod_select_webform_submission_insert($node, $submission) {
+  foreach($node->webform['components'] as $cid => $component) {
+    if ($component['type'] == 'paymethod_select') {
+      $node->webform['sid'] = $submission->sid;
+      break;
+    }
+  }
 }
-
-function webform_paymethod_select_webform_component_insert($component) {
-  //dpm($component, __FUNCTION__ . ': component');
-}
-
-function webform_paymethod_select_webform_component_update($component) {
-  //dpm($component, __FUNCTION__ . ': component');
-}
-
 
 function webform_paymethod_select_element_info_alter(&$element) {
   //dpm(__FUNCTION__);
@@ -632,7 +540,7 @@ function webform_paymethod_select_element_valditate_line_item(array $element, ar
   //unset($form_state['values']['extra']['line_items']['add_more']);
 
   $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
-  dpm($values, 'values');
+  //dpm($values, 'values');
   // Don't let the submit button's value be validated.
   unset($values['add_more']);
   $line_items = array();

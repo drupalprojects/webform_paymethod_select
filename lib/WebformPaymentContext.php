@@ -3,8 +3,8 @@
 namespace Drupal\webform_paymethod_select;
 
 class WebformPaymentContext implements PaymentContextInterface {
-  protected $nid;
-  protected $sid;
+  public $nid;
+  public $sid;
   protected $data;
   protected $cid_2_form_key;
 
@@ -52,12 +52,12 @@ class WebformPaymentContext implements PaymentContextInterface {
 
   // ****************************************************
 
-  public function setSid($sid) {
-    $this->sid = $sid;
-  }
-
   public function setCid2FormKey($cid_2_form_key) {
     $this->cid_2_form_key = $cid_2_form_key;
+  }
+
+  public function cid2FormKey($cid) {
+    return isset($this->cid_2_form_key[$cid]) ? $this->cid_2_form_key[$cid] : FALSE;
   }
 
   public function setData(&$data) {
