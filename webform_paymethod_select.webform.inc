@@ -28,15 +28,8 @@ function _webform_defaults_paymethod_select() {
   return $element;
 }
 
-//function _webform_paymethod_select_payment_method_options(&$component) {
 function _webform_paymethod_select_payment_method_options() {
-  /*if (isset($component['extra']['payment']) == TRUE) {
-    $payment = $component['extra']['payment'];
-  }
-  else {
-    $component['extra']['payment'] = $payment = webform_paymethod_select_create_payment();
-    }*/
-
+  // temporary payment object used just in this function
   $payment = new Payment(
     array(
       'currency_code'   => 'EUR',
@@ -44,7 +37,6 @@ function _webform_paymethod_select_payment_method_options() {
       'finish_callback' => 'webform_paymethod_select_payment_finish',
     )
   );
-  //$payment = webform_paymethod_select_create_payment();
 
   $payment_method_options = array();
 
@@ -60,8 +52,6 @@ function _webform_paymethod_select_payment_method_options() {
  */
 function _webform_edit_paymethod_select($component) {
 
-  //dpm($component, 'component');
-
   $settings = drupal_array_merge_deep(
     array(
       'payment_description'      => 'Default Payment',
@@ -71,8 +61,6 @@ function _webform_edit_paymethod_select($component) {
     ),
     $component['extra']
   );
-  //$settings['selected_payment_methods'] = array_combine($settings['selected_payment_methods'], $settings['selected_payment_methods']);
-  dpm($settings['line_items'], 'settings');
 
   $form = array(
     'extra' => array(
@@ -85,22 +73,15 @@ function _webform_edit_paymethod_select($component) {
     )
   );
 
-  //dpm( _webform_paymethod_select_payment_method_options(), 'payment options');
-
   $form['extra']['selected_payment_methods'] = array(
     '#title'         => t('Selected Payment Methods'),
     '#type'          => 'select',
     '#multiple'      => TRUE,
     '#description'   => 'Select 1 or more payment methods that will be available for seletion to the user.',
-    //'#options'       => _webform_paymethod_select_payment_method_options($component),
     '#options'       => _webform_paymethod_select_payment_method_options(),
-    //'#default_value' => array_keys($settings['selected_payment_methods']),
-    //'#default_value' => array_keys($component['extra']['selected_payment_methods']),
-    //'#default_value' => 4,
     '#default_value' => $settings['selected_payment_methods'],
   );
 
-  dpm($component, 'component');
   $node = node_load($component['nid']);
 
   include_once drupal_get_path('module', 'webform_paymethod_select') . '/currency_codes.inc.php';
@@ -131,8 +112,6 @@ function _webform_edit_paymethod_select($component) {
  */
 function _webform_render_paymethod_select($component, $value = NULL, $filter = TRUE) {
 
-  //dpm($component, __FUNCTION__ . ': component');
-
   $pmids = array();
 
   if (!empty($component['extra']['selected_payment_methods'])) {
@@ -141,37 +120,12 @@ function _webform_render_paymethod_select($component, $value = NULL, $filter = T
     }
   }
 
-  /*if (empty($component['extra']['payment']) == TRUE) {
-    dpm(__FUNCTION__ . ': kein payment objekt');
-    $payment = $component['extra']['payment'] = webform_paymethod_select_create_payment();
-  }
-  else {
-    dpm(__FUNCTION__ . ': payment objekt existiert');
-    $payment = &$component['extra']['payment'];
-    }*/
-
-  /*if (!empty($component['extra']['payment'])) {
-    $access = payment_status_is_or_has_ancestor($component['extra']['payment']->getStatus()->status, PAYMENT_STATUS_NEW);
-  }
-  else {
-    $access = TRUE;
-    }*/
-
-  /*
-  $form_state            = form_state_defaults();
-  $form_state['payment'] = &$payment;*/
-
   $element['#type']                     = 'paymethod_select';
-  //$element['#access']                   = $access;
   $element['#title']                    = t('Available payment methods');
   $element['#required']                 = TRUE;
   $element['#selected_payment_methods'] = $pmids;
   $element['#weight']                   = isset($component['weight']) == TRUE ? $component['weight'] : 0;
   $element['#default_value']            = array_shift($pmids);
-
-  /*$element['#payment_description']       = !empty($component['extra']['payment_description']) ? $component['extra']['payment_description'] : '';
-    $element['#available_payment_methods'] = !empty($component['extra']['available_payment_methods']) ? _webform_paymethod_select_payment_method_options($component) : t('There are no payment methods available for selection. Please also check /admin/config/services/payment/method wether you need to define a payment method.');*/
-
 
   return $element;
 }

@@ -18,8 +18,7 @@ class WebformPaymentContext implements PaymentContextInterface {
 
   public static function fromWebformData(&$form_state) {
     $node = $form_state['complete form']['#node'];
-    dpm($node, __FUNCTION__ . ': node');
-    dpm($form_state, __FUNCTION__ . ': form_state');
+
     if (isset($node) == TRUE) {
       $sid     = isset($node->webform['sid']) ? $node->webform['sid'] : NULL;
       $context = new static($node->nid, $sid);
