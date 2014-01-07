@@ -71,10 +71,9 @@ function webform_paymethod_select_element_info() {
   // A payment method selection and configuration element. Every form this
   // element is used in should have a Payment object in $form_state['payment'].
   $elements['paymethod_select'] = array(
-    '#input'                    => TRUE,
-    '#process'                  => array('webform_paymethod_select_form_process'),
-    '#element_validate'         => array('webform_paymethod_select_form_process_validate'),
-    '#selected_payment_methods' => array(),
+    '#input'            => TRUE,
+    '#process'          => array('webform_paymethod_select_form_process'),
+    '#element_validate' => array('webform_paymethod_select_form_process_validate'),
   );
 
   return $elements;
@@ -133,7 +132,7 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
     $interval = $form_state['values']['submitted'][$cids['donation_interval']];
   }
   if (isset($form_state['storage']) && isset($form_state['storage']['submitted'][$cids['donation_interval']])) {
-    $interval $form_state['storage']['submitted'][$cids['donation_interval']];
+    $interval = $form_state['storage']['submitted'][$cids['donation_interval']];
   }
 
   $recurrent = !empty($interval) && $interval != '1';
