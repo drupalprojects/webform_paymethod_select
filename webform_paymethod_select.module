@@ -112,6 +112,16 @@ function _webform_paymethod_select_get_payment_method_form(&$element, &$form_sta
  */
 function webform_paymethod_select_form_process(array $element, array &$form_state, array &$form) {
 
+  if (empty($form_state['payment']) == TRUE) {
+    _webform_paymethod_select_set_payment($form_state, $component);
+  }
+
+  if (   isset($form_state['build_info']['base_form_id']) == TRUE
+      && $form_state['build_info']['base_form_id'] == 'webform_client_form'
+      && in_array('webform_paymethod_select_form_submit', $form['#submit']) == FALSE) {
+    $form['#submit'][] = 'webform_paymethod_select_form_submit';
+  }
+
   $payment = $form_state['payment'];
 
   $element['#tree'] = TRUE;
@@ -305,42 +315,6 @@ function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL)
     $payment->setLineItem($line_item);
   }
   $form_state['payment'] = $payment;
-}
-
-/**
- * Implements hook_form_alter().
- *
- * We need to ensure a payment object is set in $form_state['payment']
- * This alters the form for forms used by form_builder_webform
- */
-function webform_paymethod_select_form_alter(&$form, &$form_state, $form_id) {
-  if ($form_id == 'form_builder_preview') {
-    _webform_paymethod_select_set_payment($form_state);
-  }
-}
-
-/**
- * Implements hook_form_<BASE form ID>_alter().
- *
- * We need to ensure a payment object is set in $form_state['payment']
- * This alters all webforms using the paymethod_select webform component
- */
-function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
-  $node = webform_paymethod_select_get_node($form);
-
-  if (isset($node) == TRUE && isset($node->webform['components']) == TRUE) {
-    foreach($node->webform['components'] as $component) {
-      if ($component['type'] == 'paymethod_select') {
-        if (empty($form_state['payment']) == TRUE) {
-          _webform_paymethod_select_set_payment($form_state, $component);
-        }
-        if (in_array('webform_paymethod_select_form_submit', $form['#submit']) == FALSE) {
-          $form['#submit'][] = 'webform_paymethod_select_form_submit';
-        }
-        break;
-      }
-    }
-  }
 }
 
 /**
