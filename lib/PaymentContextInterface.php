@@ -6,8 +6,8 @@ interface PaymentContextInterface {
 
   public function setData(&$data);
 
-  public function dataValue($key);
+  public function value($key);
 
-  public function dataValues(array $keys);
+  public function values(array $keys);
 
 }

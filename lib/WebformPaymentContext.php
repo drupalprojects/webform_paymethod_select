@@ -63,11 +63,11 @@ class WebformPaymentContext implements PaymentContextInterface {
     return $this->data = $data;
   }
 
-  public function dataValue($key) {
+  public function value($key) {
     return isset($this->data[$key]) ? $this->data[$key] : FALSE;
   }
 
-  public function dataValues(array $keys) {
+  public function values(array $keys) {
     $values = array();
     foreach ($keys as $key) {
       $values[$key] = isset($this->data[$key]) ? $this->data[$key] : FALSE;
@@ -75,7 +75,7 @@ class WebformPaymentContext implements PaymentContextInterface {
     return $values;
   }
 
-  public function setDataValue($key, $data) {
+  public function setValue($key, $data) {
     $this->data[$key] = $data;
   }
 }

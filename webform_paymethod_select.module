@@ -251,7 +251,7 @@ function webform_paymethod_select_form_process_validate(array $element, array &$
   $selected_method_validate_callback = $payment->method->controller->payment_configuration_form_elements_callback . '_validate';
   if (   function_exists($selected_method_validate_callback) == TRUE
       && !empty($element['payment_method_all_forms'][$selected_method])) {
-    $payment->context_data['context']->setDataValue('pmid', $pmid);
+    $payment->context_data['context']->setValue('pmid', $pmid);
     $selected_method_validate_callback(
       $element['payment_method_all_forms'][$selected_method],
       $form_state
@@ -345,16 +345,16 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
           continue;
         }
         if (isset($form_state['values'][$form_key])) {
-          $context->setDataValue($form_key, $form_state['values'][$form_key]);
+          $context->setValue($form_key, $form_state['values'][$form_key]);
         }
         elseif (isset($form_state['values']['submitted'][$cid]) == TRUE) {
-          $context->setDataValue($form_key, $form_state['values']['submitted'][$cid]);
+          $context->setValue($form_key, $form_state['values']['submitted'][$cid]);
         }
         elseif (isset($form_state['values']['submitted'][$form_key]) == TRUE) {
-          $context->setDataValue($form_key, $form_state['values']['submitted'][$form_key]);
+          $context->setValue($form_key, $form_state['values']['submitted'][$form_key]);
         }
         elseif (isset($form_state['storage']['submitted'][$cid]) == TRUE) {
-          $context->setDataValue($form_key, $form_state['storage']['submitted'][$cid]);
+          $context->setValue($form_key, $form_state['storage']['submitted'][$cid]);
         }
       }
 
@@ -366,7 +366,7 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
     // not have a fixed amount
     foreach ($payment->line_items as $line_item) {
       if ($line_item->component_or_fixed == 'component') {
-        $line_item->amount = (float) $context->dataValue($context->cid2FormKey($line_item->amount_component));
+        $line_item->amount = (float) $context->value($context->cid2FormKey($line_item->amount_component));
       }
     }
     entity_save('payment', $payment);
