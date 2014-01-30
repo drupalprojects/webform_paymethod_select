@@ -1,13 +1,7 @@
 <?php
 /**
  * @file
- *
- * @author    Matthias Weiss <matthias@more-onion.com>
  */
-
-
-interface PaymentRecurrentController {
-}
 
 /**
  * Implements hook_webform_component_info().
@@ -112,40 +106,11 @@ function _webform_paymethod_select_get_payment_method_form(&$element, &$form_sta
  */
 function webform_paymethod_select_form_process(array $element, array &$form_state, array &$form) {
 
-  if (empty($form_state['payment']) == TRUE) {
-    _webform_paymethod_select_set_payment($form_state, $component);
-  }
-
-  if (   isset($form_state['build_info']['base_form_id']) == TRUE
-      && $form_state['build_info']['base_form_id'] == 'webform_client_form'
-      && in_array('webform_paymethod_select_form_submit', $form['#submit']) == FALSE) {
-    $form['#submit'][] = 'webform_paymethod_select_form_submit';
-  }
-
   $payment = $form_state['payment'];
 
   $element['#tree'] = TRUE;
 
-  if (!isset($form_state['webform_cids']) && isset($form_state['complete form']['#node']))  {
-    $form_state['webform_cids'] = array();
-    foreach ($form_state['complete form']['#node']->webform['components'] as $component) {
-      $form_state['webform_cids'][$component['form_key']] = (int) $component['cid'];
-    }
-  }
-  if (isset($form_state['values']['donation_interval'])) {
-    $interval = $form_state['values']['donation_interval'];
-  }
-  $cids = &$form_state['webform_cids'];
-  if (!isset($cids['donation_interval']))
-    $interval = NULL;
-  if (isset($form_state['values']['submitted'][$cids['donation_interval']])) {
-    $interval = $form_state['values']['submitted'][$cids['donation_interval']];
-  }
-  if (isset($form_state['storage']) && isset($form_state['storage']['submitted'][$cids['donation_interval']])) {
-    $interval = $form_state['storage']['submitted'][$cids['donation_interval']];
-  }
-
-  $recurrent = !empty($interval) && $interval != '1';
+  $recurrent = $payment->context_data['context']->isRecurrent;              ;
 
   $pmid_options = array();
   if (!empty($element['#selected_payment_methods'])) {
@@ -235,23 +200,11 @@ function webform_paymethod_select_form_process_validate(array $element, array &$
     }
   }
 
-  if (empty($payment->context_data['context']) == TRUE) {
-    $node = webform_paymethod_select_get_node();
-
-    if (isset($node) == TRUE) {
-      $payment->context_data['context'] = new \Drupal\webform_paymethod_select\WebformPaymentContext($node->nid);
-    }
-    else {
-      throw new Exception(t('Can\'t retrieve node object necessary for form validation.'));
-    }
-  }
-
   $selected_method = webform_paymethod_select_clean_name($payment->method->controller->name);
 
   $selected_method_validate_callback = $payment->method->controller->payment_configuration_form_elements_callback . '_validate';
   if (   function_exists($selected_method_validate_callback) == TRUE
       && !empty($element['payment_method_all_forms'][$selected_method])) {
-    $payment->context_data['context']->setValue('pmid', $pmid);
     $selected_method_validate_callback(
       $element['payment_method_all_forms'][$selected_method],
       $form_state
@@ -291,6 +244,9 @@ function webform_paymethod_select_get_node(&$form = NULL) {
   return $node;
 }
 
+/**
+ * Helper function to create and add a payment object to the form_state
+ */
 function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL) {
 
   $line_items          = array();
@@ -311,10 +267,38 @@ function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL)
     )
   );
 
+  $payment->context_data['context'] = &$form_state['webform_context'];
+
   foreach ($line_items as $line_item) {
     $payment->setLineItem($line_item);
   }
   $form_state['payment'] = $payment;
+}
+
+/**
+ * Implements hook_form_<BASE form ID>_alter().
+ *
+ * We need to ensure a payment object is set in $form_state['payment']
+ * This alters all webforms using the paymethod_select webform component
+ */
+function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
+  $node = webform_paymethod_select_get_node($form);
+
+  $form_state['webform_context'] = new \Drupal\webform_paymethod_select\WebformPaymentContext($node, $form_state);
+
+  if (isset($node) == TRUE && isset($node->webform['components']) == TRUE) {
+    foreach($node->webform['components'] as $component) {
+      if ($component['type'] == 'paymethod_select') {
+        if (empty($form_state['payment']) == TRUE) {
+          _webform_paymethod_select_set_payment($form_state, $component);
+        }
+        if (in_array('webform_paymethod_select_form_submit', $form['#submit']) == FALSE) {
+          $form['#submit'][] = 'webform_paymethod_select_form_submit';
+        }
+        break;
+      }
+    }
+  }
 }
 
 /**
@@ -334,39 +318,11 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
     $node    = webform_paymethod_select_get_node();
     $context = &$payment->context_data['context'];
 
-    // retrieve all webform values and save them in the context
-    if (isset($node) == TRUE) {
-      $cid_2_form_key = array();
-      foreach ($node->webform['components'] as $component) {
-        $form_key             = $component['form_key'];
-        $cid                  = (int) $component['cid'];
-        $cid_2_form_key[$cid] = $form_key;
-        if ($component['type'] == 'paymethod_select') {
-          continue;
-        }
-        if (isset($form_state['values'][$form_key])) {
-          $context->setValue($form_key, $form_state['values'][$form_key]);
-        }
-        elseif (isset($form_state['values']['submitted'][$cid]) == TRUE) {
-          $context->setValue($form_key, $form_state['values']['submitted'][$cid]);
-        }
-        elseif (isset($form_state['values']['submitted'][$form_key]) == TRUE) {
-          $context->setValue($form_key, $form_state['values']['submitted'][$form_key]);
-        }
-        elseif (isset($form_state['storage']['submitted'][$cid]) == TRUE) {
-          $context->setValue($form_key, $form_state['storage']['submitted'][$cid]);
-        }
-      }
-
-      $context->sid = isset($node->webform['sid']) ? $node->webform['sid'] : NULL;
-      $context->setCid2FormKey($cid_2_form_key);
-    }
-
     // handle setting the amount value in line items that were configured to
     // not have a fixed amount
     foreach ($payment->line_items as $line_item) {
       if ($line_item->component_or_fixed == 'component') {
-        $line_item->amount = (float) $context->value($context->cid2FormKey($line_item->amount_component));
+        $line_item->amount = (float) $context->value($line_item->amount_component);
       }
     }
     entity_save('payment', $payment);
@@ -410,6 +366,9 @@ function webform_paymethod_select_webform_submission_insert($node, $submission) 
   }
 }
 
+/**
+ * Implements hook_element_info_alter().
+ */
 function webform_paymethod_select_element_info_alter(&$element) {
   if (isset($element['payment_line_item']) == TRUE) {
     $element['payment_line_item']['#process'][]        = 'webform_paymethod_select_element_process_line_item';
@@ -417,6 +376,9 @@ function webform_paymethod_select_element_info_alter(&$element) {
   }
 }
 
+/**
+ * Callback function set in hook_element_info_alter() hook
+ */
 function webform_paymethod_select_element_process_line_item(array $element, array &$form_state, array $form) {
   $node = node_load($form['nid']['#value']);
   $webform_component_list = webform_component_list($node, FALSE);
@@ -473,6 +435,9 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
   return $element;
 }
 
+/**
+ * Callback function set in hook_element_info_alter() hook
+ */
 function webform_paymethod_select_element_valditate_line_item(array $element, array &$form_state) {
 
   $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);

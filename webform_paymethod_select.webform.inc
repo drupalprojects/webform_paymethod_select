@@ -1,10 +1,7 @@
 <?php
 /**
  * @file
- *
- * @author    Matthias Weiss <matthias@more-onion.com>
  */
-
 
 /**
  * Implements _webform_defaults_[component]().
