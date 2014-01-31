@@ -25,6 +25,10 @@ function _webform_defaults_paymethod_select() {
   return $element;
 }
 
+/**
+ * Helper function to get a list of all payment methods that have
+ * been configured for this drupal installation
+ */
 function _webform_paymethod_select_payment_method_options() {
   // temporary payment object used just in this function
   $payment = new Payment(

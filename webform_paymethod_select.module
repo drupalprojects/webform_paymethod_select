@@ -3,6 +3,9 @@
  * @file
  */
 
+interface PaymentRecurrentController {
+}
+
 /**
  * Implements hook_webform_component_info().
  */
@@ -106,13 +109,11 @@ function _webform_paymethod_select_get_payment_method_form(&$element, &$form_sta
  */
 function webform_paymethod_select_form_process(array $element, array &$form_state, array &$form) {
 
-  $payment = $form_state['payment'];
-
+  $payment          = $form_state['payment'];
   $element['#tree'] = TRUE;
+  $recurrent        = $payment->context_data['context']->isRecurrent;              ;
+  $pmid_options     = array();
 
-  $recurrent = $payment->context_data['context']->isRecurrent;              ;
-
-  $pmid_options = array();
   if (!empty($element['#selected_payment_methods'])) {
     foreach ($payment->availablePaymentMethods(entity_load('payment_method', $element['#selected_payment_methods'])) as $payment_method) {
       if (!$recurrent || $payment_method->controller instanceof PaymentRecurrentController) {
@@ -284,11 +285,12 @@ function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL)
 function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
   $node = webform_paymethod_select_get_node($form);
 
-  $form_state['webform_context'] = new \Drupal\webform_paymethod_select\WebformPaymentContext($node, $form_state);
-
   if (isset($node) == TRUE && isset($node->webform['components']) == TRUE) {
     foreach($node->webform['components'] as $component) {
       if ($component['type'] == 'paymethod_select') {
+        if (empty($form_state['webform_context']) == TRUE) {
+          $form_state['webform_context'] = new \Drupal\webform_paymethod_select\WebformPaymentContext($node, $form_state);
+        }
         if (empty($form_state['payment']) == TRUE) {
           _webform_paymethod_select_set_payment($form_state, $component);
         }
@@ -314,17 +316,23 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
       && (   isset($form_state['webform_completed']) == FALSE /*single page webform submit*/
           || $form_state['webform_completed']        == TRUE  /*multi page webform submit*/)) {
 
-    $payment = &$form_state['payment'];
-    $node    = webform_paymethod_select_get_node();
-    $context = &$payment->context_data['context'];
+    $payment      = &$form_state['payment'];
+    $node         = webform_paymethod_select_get_node();
+    $context      = &$payment->context_data['context'];
+    $context->sid = $context->node->webform['sid'];
 
     // handle setting the amount value in line items that were configured to
     // not have a fixed amount
     foreach ($payment->line_items as $line_item) {
       if ($line_item->component_or_fixed == 'component') {
-        $line_item->amount = (float) $context->value($line_item->amount_component);
+        $line_item->amount = (float) $context->valueByKey($line_item->amount_component);
       }
     }
+    // before saving the payment the class of the context is changed to
+    // WebformSubmission as we need this type later when loading a alread
+    // saved payment; the WebformPaymentContext class can't handle saved
+    // webform submissions
+    $payment->context_data['context'] = \Drupal\little_helpers\WebformSubmission::load($context->node->nid, $context->sid);
     entity_save('payment', $payment);
 
     // Execute the payment.
@@ -354,8 +362,8 @@ function webform_paymethod_select_webform_submission_presave($node, &$submission
  * Implements hook_webform_submission_insert().
  *
  * our only chance to create a connection between payment and
- * webform submission; we save it in the node object and fetch it
- * later to safe into the context
+ * webform submission; we save the submission ID in the node
+ * object and fetch it later to safe into the context
  */
 function webform_paymethod_select_webform_submission_insert($node, $submission) {
   foreach($node->webform['components'] as $cid => $component) {
