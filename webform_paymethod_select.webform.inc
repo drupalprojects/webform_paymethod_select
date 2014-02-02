@@ -76,9 +76,9 @@ function _webform_edit_paymethod_select($component) {
 
   $form['extra']['selected_payment_methods'] = array(
     '#title'         => t('Selected Payment Methods'),
+    '#description'   => 'Select 1 or more payment methods that will be available for seletion to the user.',
     '#type'          => 'select',
     '#multiple'      => TRUE,
-    '#description'   => 'Select 1 or more payment methods that will be available for seletion to the user.',
     '#options'       => _webform_paymethod_select_payment_method_options(),
     '#default_value' => $settings['selected_payment_methods'],
   );
@@ -88,16 +88,22 @@ function _webform_edit_paymethod_select($component) {
   include_once drupal_get_path('module', 'webform_paymethod_select') . '/currency_codes.inc.php';
 
   $form['extra']['currency_code'] = array(
-    '#type'          => 'select',
     '#title'         => t('Select a currency code'),
+    '#description'   => t('Select the currency code for this payment.'),
+    '#type'          => 'select',
     '#multiple'      => FALSE,
-    '#descriptions'  => t('Select the currency code for this payment.'),
     '#options'       => $currency_codes,
     '#default_value' => $settings['currency_code'],
   );
 
   $form['extra']['line_items'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Line Items'),
+  );
+
+  $form['extra']['line_items']['items'] = array(
     '#title'         => t('Line items'),
+    '#description'   => t('Define 1 or more line items.'),
     '#type'          => 'payment_line_item',
     '#cardinality'   => 0,
     '#default_value' => $settings['line_items'],
@@ -107,6 +113,11 @@ function _webform_edit_paymethod_select($component) {
 
   return $form;
 }
+
+/*
+function webform_paymethod_select_webform_paymethod_select_presave(&$component) {
+  dpm($component, __FUNCTION__);
+  }*/
 
 /**
  * Implements _webform_render_[component]().
@@ -130,5 +141,3 @@ function _webform_render_paymethod_select($component, $value = NULL, $filter = T
 
   return $element;
 }
-
-

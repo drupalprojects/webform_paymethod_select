@@ -7,6 +7,4 @@ dependencies[] = payment (>1.5)
 dependencies[] = psr0
 dependencies[] = webform
 
-files[] = lib/PaymentContextInterface.php
-files[] = lib/WebformPaymentContext.php
-files[] = lib/PaymethodLineItem.php
+stylesheets[all][] = webform_paymethod_select.css
