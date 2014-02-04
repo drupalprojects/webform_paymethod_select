@@ -17,7 +17,8 @@ function webform_paymethod_select_element_info_alter(&$element) {
  * Callback function set in hook_element_info_alter() hook
  */
 function webform_paymethod_select_element_process_line_item(array $element, array &$form_state, array $form) {
-  $node = node_load($form['nid']['#value']);
+  module_load_include('inc', 'webform', 'includes/webform.components');
+  $node                   = node_load($form['nid']['#value']);
   $webform_component_list = webform_component_list($node, FALSE);
 
   foreach ($webform_component_list as $cid => $component) {
@@ -40,7 +41,6 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
       }
 
       $defaults->amount = ($defaults->amount == 0) ? '' : $defaults->amount;
-
       $line_item_form = array(
         'amount_source' => array(
           '#title'         => t('Set fixed amount'),

@@ -7,7 +7,9 @@ interface PaymentRecurrentController {
 }
 
 require_once dirname(__FILE__) . '/webform_paymethod_select.form_builder.inc';
+require_once drupal_get_path('module', 'form_builder') . '/includes/form_builder.properties.inc';
 require_once dirname(__FILE__) . '/webform_paymethod_select.line_item.inc';
+require_once dirname(__FILE__) . '/webform_paymethod_select.webform.inc';
 
 /**
  * Implements hook_webform_component_info().

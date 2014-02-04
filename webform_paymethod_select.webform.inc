@@ -85,7 +85,7 @@ function _webform_edit_paymethod_select($component) {
 
   $node = node_load($component['nid']);
 
-  include_once drupal_get_path('module', 'webform_paymethod_select') . '/currency_codes.inc.php';
+  require dirname(__FILE__) . '/currency_codes.inc.php';
 
   $form['extra']['currency_code'] = array(
     '#title'         => t('Select a currency code'),
@@ -114,11 +114,6 @@ function _webform_edit_paymethod_select($component) {
   return $form;
 }
 
-/*
-function webform_paymethod_select_webform_paymethod_select_presave(&$component) {
-  dpm($component, __FUNCTION__);
-  }*/
-
 /**
  * Implements _webform_render_[component]().
  */
@@ -132,8 +127,9 @@ function _webform_render_paymethod_select($component, $value = NULL, $filter = T
     }
   }
 
+  //dpm($component, 'component');
   $element['#type']                     = 'paymethod_select';
-  $element['#title']                    = t('Available payment methods');
+  $element['#title']                    = $component['name'];
   $element['#required']                 = TRUE;
   $element['#selected_payment_methods'] = $pmids;
   $element['#weight']                   = isset($component['weight']) == TRUE ? $component['weight'] : 0;

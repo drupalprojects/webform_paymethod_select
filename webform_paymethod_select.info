@@ -8,3 +8,7 @@ dependencies[] = psr0
 dependencies[] = webform
 
 stylesheets[all][] = webform_paymethod_select.css
+
+files[] = webform_paymethod_select.webform.inc
+files[] = webform_paymethod_select.form_builder.inc
+files[] = webform_paymethod_select.line_item.inc
