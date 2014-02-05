@@ -6,6 +6,8 @@
 interface PaymentRecurrentController {
 }
 
+use \Drupal\webform_paymethod_select\WebformPaymentContext;
+
 require_once dirname(__FILE__) . '/webform_paymethod_select.form_builder.inc';
 require_once drupal_get_path('module', 'form_builder') . '/includes/form_builder.properties.inc';
 require_once dirname(__FILE__) . '/webform_paymethod_select.line_item.inc';
@@ -292,7 +294,7 @@ function webform_paymethod_select_form_alter(&$form, &$form_state, $form_id) {
 
     if (empty($form_state['webform_context']) == TRUE) {
       $node = webform_paymethod_select_get_node($form);
-      $form_state['webform_context'] = new \Drupal\webform_paymethod_select\WebformPaymentContext($node, $form_state);
+      $form_state['webform_context'] = WebformPaymentContext::fromFormState($node, $form_state);
     }
     if (empty($form_state['payment']) == TRUE) {
       _webform_paymethod_select_set_payment($form_state);
@@ -313,7 +315,7 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
     foreach($node->webform['components'] as $component) {
       if ($component['type'] == 'paymethod_select') {
         if (empty($form_state['webform_context']) == TRUE) {
-          $form_state['webform_context'] = new \Drupal\webform_paymethod_select\WebformPaymentContext($node, $form_state);
+          $form_state['webform_context'] = WebformPaymentContext::fromFormState($node, $form_state);
         }
         if (empty($form_state['payment']) == TRUE) {
           _webform_paymethod_select_set_payment($form_state, $component);
@@ -340,23 +342,20 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
       && (   isset($form_state['webform_completed']) == FALSE /*single page webform submit*/
           || $form_state['webform_completed']        == TRUE  /*multi page webform submit*/)) {
 
-    $payment      = &$form_state['payment'];
-    $node         = webform_paymethod_select_get_node();
-    $context      = &$payment->context_data['context'];
-    $context->sid = $context->node->webform['sid'];
+    $payment = &$form_state['payment'];
+    $node    = webform_paymethod_select_get_node();
+    $context = &$payment->context_data['context'];
+    // Transform the form_state based context into webform submission based context.
+    $context->transform();
+    $submission = $context->submission();
 
     // handle setting the amount value in line items that were configured to
     // not have a fixed amount
     foreach ($payment->line_items as $line_item) {
       if ($line_item->amount_source === 'component') {
-        $line_item->amount = (float) $context->valueByKey($line_item->amount_component);
+        $line_item->amount = (float) $submission->valueByCid($line_item->amount_component);
       }
     }
-    // before saving the payment the class of the context is changed to
-    // WebformSubmission as we need this type later when loading a alread
-    // saved payment; the WebformPaymentContext class can't handle saved
-    // webform submissions
-    $payment->context_data['context'] = \Drupal\little_helpers\WebformSubmission::load($context->node->nid, $context->sid);
     entity_save('payment', $payment);
 
     // Execute the payment.
