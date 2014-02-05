@@ -39,9 +39,9 @@ function _webform_form_builder_map_paymethod_select() {
       'currency_code' => array(
         'storage_parents' => array('extra', 'currency_code'),
       ),
-      /*'line_items' => array(
+      'line_items' => array(
         'storage_parents' => array('extra', 'line_items'),
-        ),*/
+      ),
     ),
   );
 }
@@ -49,7 +49,7 @@ function _webform_form_builder_map_paymethod_select() {
 /**
  * Callback referenced in _webform_form_builder_properties_<webform-component>
  */
-function webform_paymethod_select_form_builder_property_paymethod_options_form(&$form_state, $form_type, $element, $property) {
+function webform_paymethod_select_form_builder_all_properties_form(&$form_state, $form_type, $element, $property) {
 
   $form[$property] = array(
     '#form_builder' => array('property_group' => 'options'),
@@ -62,17 +62,49 @@ function webform_paymethod_select_form_builder_property_paymethod_options_form(&
   $component_edit_form = _webform_edit_paymethod_select($element['#webform_component']);
   $form[$property] += $component_edit_form['extra'][$property];
 
-  //dpm($property, 'property');
+  return $form;
+}
+/**
+ * Callback referenced in _webform_form_builder_properties_<webform-component>
+ */
+function webform_paymethod_select_line_item_property_form(&$form_state, $form_type, $element, $property) {
+
+  $form['line_items'] = array(
+    '#form_builder' => array('property_group' => 'options'),
+    '#tree'         => TRUE,
+  );
+
+  if (isset($element['#line_items'])) {
+    $element['#webform_component']['extra']['line_items']['items'] = $element['#line_items'];
+  }
+  $component_edit_form = _webform_edit_paymethod_select($element['#webform_component']);
+  $form['line_items'] += $component_edit_form['extra']['line_items'];
+
+  if ($form['#id'] == 'form-builder-field-configure') {
+    /*if (isset($form_state['submit_handlers']) == TRUE) {
+      $form_state['submit_handlers'][] = 'form_builder_field_configure_submit';
+      }*/
+    if (isset($element['add_more']['#submit']) == TRUE) {
+      $element['add_more']['#submit'][] = 'form_builder_field_configure_submit';//unset($element['add_more']['#submit']);
+    }
+  }
+
   //dpm($element, 'element');
   //dpm($form, 'form');
   return $form;
 }
 
-/*
- * Callback referenced in _webform_form_builder_properties_<webform-component>
+/**
+ * Submit Callback referenced in _webform_form_builder_properties_<webform-component>
  */
-function webform_paymethod_select_form_builder_property_paymethod_options_submit(&$form, &$form_state) {
-  dpm($form_state, 'form state');
+function webform_paymethod_select_line_item_property_form_submit(&$form, &$form_state) {
+  //dpm($form_state);
+  if (isset($form_state['values']['payment-line-items-items']) == TRUE) {
+    unset($form_state['values']['payment-line-items-items']);
+  }
+  if (isset($form_state['input']['line_items']) == TRUE) {
+    $form_state['values']['line_items'] = &$form_state['input']['line_items'];
+  }
 }
 
 /**
@@ -81,20 +113,17 @@ function webform_paymethod_select_form_builder_property_paymethod_options_submit
 function _webform_form_builder_properties_paymethod_select() {
   return array(
     'payment_description' => array(
-      'form'   => 'webform_paymethod_select_form_builder_property_paymethod_options_form',
-      //'submit' => array('webform_paymethod_select_form_builder_property_paymethod_options_submit'),
+      'form'   => 'webform_paymethod_select_form_builder_all_properties_form',
     ),
     'selected_payment_methods' => array(
-      'form'   => 'webform_paymethod_select_form_builder_property_paymethod_options_form',
-      //'submit' => array('webform_paymethod_select_form_builder_property_paymethod_options_submit'),
+      'form'   => 'webform_paymethod_select_form_builder_all_properties_form',
     ),
     'currency_code' => array(
-      'form'   => 'webform_paymethod_select_form_builder_property_paymethod_options_form',
-      //'submit' => array('webform_paymethod_select_form_builder_property_paymethod_options_submit'),
+      'form'   => 'webform_paymethod_select_form_builder_all_properties_form',
     ),
-    /*'line_items' => array(
-      'form'   => 'webform_paymethod_select_form_builder_property_paymethod_options_form',
-      //'submit' => array('webform_paymethod_select_form_builder_property_paymethod_options_submit'),
-      ),*/
+    'line_items' => array(
+      'form'   => 'webform_paymethod_select_line_item_property_form',
+      'submit' => array('webform_paymethod_select_line_item_property_form_submit'),
+    ),
   );
 }

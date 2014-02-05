@@ -18,7 +18,7 @@ function webform_paymethod_select_element_info_alter(&$element) {
  */
 function webform_paymethod_select_element_process_line_item(array $element, array &$form_state, array $form) {
   module_load_include('inc', 'webform', 'includes/webform.components');
-  $node                   = node_load($form['nid']['#value']);
+  $node                   = webform_paymethod_select_get_node($form);
   $webform_component_list = webform_component_list($node, FALSE);
 
   foreach ($webform_component_list as $cid => $component) {
@@ -97,14 +97,18 @@ function webform_paymethod_select_element_valditate_line_item(array $element, ar
   $line_items = array();
   foreach ($values as $container => $line_item_data) {
     // ignore empty line items
-    if ($line_item_data['quantity'] === '' || $line_item_data['tax_rate'] === '') {
+    if (   empty($line_item_data['quantity']) == TRUE
+        && empty($line_item_data['tax_rate']) == TRUE
+        && empty($line_item_data['description']) == TRUE) {
       continue;
     }
     // They're not all empty, so make sure they all contain input.
     else {
       $errors = array_fill_keys(array_keys($element['#value']), FALSE);
       foreach ($line_item_data as $property => $value) {
-        if ($property != 'amount' && $property != 'amount_source' && $property != 'component' && !strlen($value)) {
+        if (   $property != 'amount'
+            && $property != 'component'
+            && !strlen($value)) {
           form_error($element[$container][$property], t('%title is required, or leave all fields for this line item empty.', array(
             '%title' => $element[$container][$property]['#title'],
           )));
@@ -136,6 +140,7 @@ function webform_paymethod_select_element_valditate_line_item(array $element, ar
     $line_item_data['tax_rate']         = (float) $line_item_data['tax_rate'];
     $line_items[]                       = new Drupal\webform_paymethod_select\PaymethodLineItem($line_item_data);
   }
+
   form_set_value($element, $line_items, $form_state);
 }
 
