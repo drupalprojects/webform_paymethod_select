@@ -99,7 +99,6 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
   // Don't let the submit button's value be validated.
   unset($values['add_more']);
   $line_items = array();
-  dpm($values);
   foreach ($values as $container => $line_item_data) {
     // ignore empty line items
     if (   empty($line_item_data['quantity']) == TRUE
