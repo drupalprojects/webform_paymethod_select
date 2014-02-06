@@ -71,17 +71,8 @@ function webform_paymethod_select_form_builder_all_properties_form(&$form_state,
  * Callback referenced in _webform_form_builder_properties_<webform-component>
  */
 function webform_paymethod_select_line_item_property_form(&$form_state, $form_type, $element, $property) {
-
-  $form['line_items'] = array(
-    '#form_builder' => array('property_group' => 'options'),
-    '#tree'         => TRUE,
-  );
-
-  if (isset($element['#line_items'])) {
-    $element['#webform_component']['extra']['line_items'] = $element['#line_items'];
-  }
-  $component_edit_form = _webform_edit_paymethod_select($element['#webform_component']);
-  $form['line_items'] += $component_edit_form['extra']['line_items'];
+  $form = webform_paymethod_select_form_builder_all_properties_form($form_state, $form_type, $element, $property);
+  // #process needs a hardcoded parent for it's radio buttons.
   $form['line_items']['#parents'] = array('line_items');
   return $form;
 }
