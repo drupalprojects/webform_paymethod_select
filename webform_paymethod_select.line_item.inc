@@ -61,6 +61,12 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#maxlength'     => '20',
         '#required'      => FALSE,
         '#default_value' => $defaults->amount,
+        '#wrapper_attributes' => array(
+          'class' => array('webform-paymethod-select-amount-option'),
+          ),
+        '#states'        => array(
+          'disabled' => array('[:input[name="extra[line_items][items][container_0][amount_source]"]' => array('value' => 'component')),
+          ),
       );
 
       $line_item_form['component'] = array(
@@ -80,6 +86,12 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#options'       => empty($webform_component_list) ? array('' => t('No available components')) : $webform_component_list,
         '#disabled'      => empty($webform_component_list) ? TRUE : FALSE,
         '#required'      => FALSE,
+        '#wrapper_attributes' => array(
+          'class' => array('webform-paymethod-select-amount-option'),
+          ),
+        '#states'        => array(
+          'disabled' => array('[:input[name="extra[line_items][items][container_0][amount_source]"]' => array('value' => 'fixed')),
+          ),
       );
 
       $value = $line_item_form + $value;

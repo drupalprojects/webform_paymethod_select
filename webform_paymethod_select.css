@@ -2,6 +2,8 @@
  * @file
  */
 
-.webform-paymethod-select-line {
-  clear: left;
+form .payment-line-item-container .webform-paymethod-select-amount-option {
+  clear: both;
+  float: none;
+  margin-left: 2em;
 }
