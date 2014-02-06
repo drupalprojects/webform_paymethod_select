@@ -7,6 +7,9 @@
  * Implements hook_form_builder_types().
  */
 function webform_paymethod_select_form_builder_types() {
+  if (!module_exists('form_builder_webform')) {
+    return;
+  }
   $map = _form_builder_webform_property_map('paymethod_select');
   unset($map['properties']['default_value']);
   $fields['paymethod_select'] = array(
