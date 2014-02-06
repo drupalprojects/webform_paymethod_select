@@ -15,7 +15,7 @@ class WebformPaymentContext implements PaymentContextInterface {
     $this->submission = $submission;
   }
   public static function fromFormState($node, &$form_state) {
-    return new static(new FormState($form_state));
+    return new static(new FormState($node, $form_state));
   }
 
   public function value($key) {
