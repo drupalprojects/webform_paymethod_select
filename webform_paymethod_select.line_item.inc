@@ -72,6 +72,8 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
 
       $line_item_form['amount_component'] = array(
         '#type'          => 'select',
+        '#title'         => t('Component'),
+        '#title_display' => 'invisible',
         '#default_value' => $defaults->amount_component,
         '#options'       => empty($webform_component_list) ? array('' => t('No available components')) : $webform_component_list,
         '#disabled'      => empty($webform_component_list) ? TRUE : FALSE,
@@ -106,13 +108,14 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
     else {
       $errors = array_fill_keys(array_keys($element['#value']), FALSE);
       foreach ($line_item_data as $property => $value) {
-        if (   $property != 'amount'
-            && $property != 'component'
-            && !strlen($value)) {
+        if (!in_array($property, array('amount', 'component', 'amount_component')) && empty($value)) {
           form_error($element[$container][$property], t('%title is required, or leave all fields for this line item empty.', array(
             '%title' => $element[$container][$property]['#title'],
           )));
         }
+      }
+      if ($line_item_data['amount_source'] === 'component' && empty($line_item_data['amount_component'])) {
+        form_error($element[$container]['amount_component'], t('Select a component that is used as source for the amount.'));
       }
       if ($line_item_data['amount_source'] === 'fixed' && empty($line_item_data['amount']) == TRUE) {
         form_error($element[$container]['amount'], t('Amount has to be set if "Set fixed amount" was selected.'));
