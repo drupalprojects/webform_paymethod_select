@@ -9,7 +9,7 @@
 function webform_paymethod_select_element_info_alter(&$element) {
   if (isset($element['payment_line_item']) == TRUE) {
     $element['payment_line_item']['#process'][]        = 'webform_paymethod_select_element_process_line_item';
-    $element['payment_line_item']['#element_validate'] = array('webform_paymethod_select_element_valditate_line_item');
+    $element['payment_line_item']['#element_validate'] = array('webform_paymethod_select_element_validate_line_item');
   }
 }
 
@@ -88,7 +88,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
 /**
  * Callback function set in hook_element_info_alter() hook
  */
-function webform_paymethod_select_element_valditate_line_item(array $element, array &$form_state) {
+function webform_paymethod_select_element_validate_line_item(array $element, array &$form_state) {
 
   $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
 
