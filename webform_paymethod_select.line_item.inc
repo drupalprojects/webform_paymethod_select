@@ -27,6 +27,8 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
     }
   }
 
+  $parents = isset($element['#parents']) ? $element['#parents'] : array('extra', 'line_items', 'items');
+
   foreach($element as $key => &$value) {
 
     if (strpos($key, 'container_') === 0) {
@@ -48,7 +50,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
           '#return_value'  => 'fixed',
           '#default_value' => $defaults->amount_source == 'fixed' ? 'fixed' : NULL,
           '#required'      => FALSE,
-          '#parents'       => array('extra','line_items','items',$key, 'amount_source'),
+          '#parents'       => array_merge($parents, array($key, 'amount_source')),
         ),
       );
 
@@ -67,7 +69,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#return_value'  => 'component',
         '#default_value' => $defaults->amount_source == 'component' ? 'component' : NULL,
         '#required'      => FALSE,
-        '#parents'       => array('extra','line_items','items',$key, 'amount_source'),
+        '#parents'       => array_merge($parents, array($key, 'amount_source')),
       );
 
       $line_item_form['amount_component'] = array(
@@ -97,6 +99,7 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
   // Don't let the submit button's value be validated.
   unset($values['add_more']);
   $line_items = array();
+  dpm($values);
   foreach ($values as $container => $line_item_data) {
     // ignore empty line items
     if (   empty($line_item_data['quantity']) == TRUE
@@ -114,7 +117,7 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
           )));
         }
       }
-      if ($line_item_data['amount_source'] === 'component' && empty($line_item_data['amount_component'])) {
+      if (!empty($line_item_data['amount_source']) && $line_item_data['amount_source'] === 'component' && empty($line_item_data['amount_component'])) {
         form_error($element[$container]['amount_component'], t('Select a component that is used as source for the amount.'));
       }
       if ($line_item_data['amount_source'] === 'fixed' && empty($line_item_data['amount']) == TRUE) {

@@ -82,18 +82,7 @@ function webform_paymethod_select_line_item_property_form(&$form_state, $form_ty
   }
   $component_edit_form = _webform_edit_paymethod_select($element['#webform_component']);
   $form['line_items'] += $component_edit_form['extra']['line_items'];
-
-  if ($form['#id'] == 'form-builder-field-configure') {
-    /*if (isset($form_state['submit_handlers']) == TRUE) {
-      $form_state['submit_handlers'][] = 'form_builder_field_configure_submit';
-      }*/
-    if (isset($element['add_more']['#submit']) == TRUE) {
-      $element['add_more']['#submit'][] = 'form_builder_field_configure_submit';//unset($element['add_more']['#submit']);
-    }
-  }
-
-  //dpm($element, 'element');
-  //dpm($form, 'form');
+  $form['line_items']['#parents'] = array('line_items');
   return $form;
 }
 
