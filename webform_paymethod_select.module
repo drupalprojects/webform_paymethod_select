@@ -396,3 +396,11 @@ function webform_paymethod_select_webform_submission_insert($node, $submission) 
     }
   }
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Implements hook_form_form_builder_webform_save_form_alter().
+ */
+function webform_paymethod_select_form_form_builder_webform_save_form_alter(&$form, &$form_state) {
+  $form['#attached']['js'][] = '/misc/ajax.js';
+}
