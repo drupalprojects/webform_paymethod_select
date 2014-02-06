@@ -127,7 +127,6 @@ function _webform_render_paymethod_select($component, $value = NULL, $filter = T
     }
   }
 
-  //dpm($component, 'component');
   $element['#type']                     = 'paymethod_select';
   $element['#title']                    = $component['name'];
   $element['#required']                 = TRUE;

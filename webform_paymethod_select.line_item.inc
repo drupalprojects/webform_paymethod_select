@@ -99,6 +99,7 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
   // Don't let the submit button's value be validated.
   unset($values['add_more']);
   $line_items = array();
+
   foreach ($values as $container => $line_item_data) {
     // ignore empty line items
     if (   empty($line_item_data['quantity']) == TRUE
@@ -139,7 +140,7 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
     }
 
     // Convert the raw input to a PaymentLineItem object.
-    $line_item_data['amount']           = $line_item_data['amount_source'] === 'fixed' ? (float) $line_item_data['amount'] : NULL;
+    $line_item_data['amount']           = $line_item_data['amount_source'] === 'fixed' ? $line_item_data['amount'] : NULL;
     $line_item_data['amount_component'] = $line_item_data['amount_source'] === 'component' ? $line_item_data['amount_component'] : NULL;
     $line_item_data['quantity']         = (int) $line_item_data['quantity'];
     $line_item_data['tax_rate']         = (float) $line_item_data['tax_rate'];
