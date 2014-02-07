@@ -43,8 +43,10 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
       }
 
       $defaults->amount = ($defaults->amount == 0) ? '' : $defaults->amount;
+      $radio_id = drupal_html_id('webform-paymethod-select-' . $key . '-amount-source');
       $line_item_form = array(
         'amount_source' => array(
+          '#attributes'    => array('class' => array($radio_id)),
           '#title'         => t('Set fixed amount'),
           '#type'          => 'radio',
           '#return_value'  => 'fixed',
@@ -63,13 +65,14 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#default_value' => $defaults->amount,
         '#wrapper_attributes' => array(
           'class' => array('webform-paymethod-select-amount-option'),
-          ),
+        ),
         '#states'        => array(
-          'disabled' => array('[:input[name="extra[line_items][items][container_0][amount_source]"]' => array('value' => 'component')),
-          ),
+          'disabled' => array(".$radio_id" => array('value' => 'component')),
+        ),
       );
 
       $line_item_form['component'] = array(
+        '#attributes'    => array('class' => array($radio_id)),
         '#title'         => t('Select the component from which to read the amount'),
         '#type'          => 'radio',
         '#return_value'  => 'component',
@@ -90,8 +93,8 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
           'class' => array('webform-paymethod-select-amount-option'),
           ),
         '#states'        => array(
-          'disabled' => array('[:input[name="extra[line_items][items][container_0][amount_source]"]' => array('value' => 'fixed')),
-          ),
+          'disabled' => array(".$radio_id" => array('value' => 'fixed')),
+        ),
       );
       
       $value['description']['#wrapper_attributes'] = array(
