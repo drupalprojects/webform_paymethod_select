@@ -18,7 +18,7 @@ function webform_paymethod_select_element_info_alter(&$element) {
  */
 function webform_paymethod_select_element_process_line_item(array $element, array &$form_state, array $form) {
   module_load_include('inc', 'webform', 'includes/webform.components');
-  $node                   = webform_paymethod_select_get_node($form);
+  $node                   = webform_paymethod_select_get_node($form, $form_state);
   $webform_component_list = webform_component_list($node, FALSE);
 
   foreach ($webform_component_list as $cid => $component) {

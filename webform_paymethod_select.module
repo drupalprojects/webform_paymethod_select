@@ -223,7 +223,7 @@ function webform_paymethod_select_form_process_validate(array $element, array &$
 /**
  * Helper function to get the current node object
  */
-function webform_paymethod_select_get_node(&$form = NULL) {
+function webform_paymethod_select_get_node(&$form = NULL, &$form_state = NULL) {
   static $node = NULL;
 
   if ($node == NULL) {
@@ -232,6 +232,9 @@ function webform_paymethod_select_get_node(&$form = NULL) {
     }
     elseif (!empty($form['nid']['#value'])) {
       $node = node_load($form['nid']['#value']);
+    }
+    elseif (isset($form_state['build_info']) && $form_state['build_info']['form_id'] == 'form_builder_field_configure') {
+      $node = node_load($form_state['build_info']['args'][1]);
     }
     else {
       if (($node = menu_get_object()) == NULL) {

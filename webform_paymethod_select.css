@@ -18,7 +18,7 @@ form .payment-line-item-container.odd {
     background-color: #F8F8F8;
 }
 
-#paymethod-select-wrapper .form-builder-wrapper .form-builder-group .payment-line-item-container .webform-paymethod-select-amount-option,
+#paymethod-select-wrapper .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-amount-option,
 form .payment-line-item-container .webform-paymethod-select-amount-option {
   clear: both;
   float: none;
