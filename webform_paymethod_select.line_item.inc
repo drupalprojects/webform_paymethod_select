@@ -93,7 +93,11 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
           'disabled' => array('[:input[name="extra[line_items][items][container_0][amount_source]"]' => array('value' => 'fixed')),
           ),
       );
-
+      
+      $value['description']['#wrapper_attributes'] = array(
+        'class' => array('webform-paymethod-select-line-item-description'),
+        );
+      //dpm($value, 'value');
       $value = $line_item_form + $value;
     }
   }
