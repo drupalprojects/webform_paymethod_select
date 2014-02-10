@@ -17,7 +17,7 @@ function _webform_defaults_paymethod_select() {
     'extra' => array(
       'payment_description'      => 'Default Payment',
       'selected_payment_methods' => array(),
-      'payment_line_items'       => array(),
+      'line_items'               => array(),
       'private'                  => FALSE,
     ),
   );

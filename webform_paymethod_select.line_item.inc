@@ -131,7 +131,11 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
       $errors = array_fill_keys(array_keys($element['#value']), FALSE);
       foreach ($line_item_data as $property => $value) {
         if (!in_array($property, array('amount', 'component', 'amount_component')) && empty($value)) {
-          form_error($element[$container][$property], t('%title is required, or leave all fields for this line item empty.', array(
+          if ($property == 'tax_rate' && $value == 0) {
+            // a tax rate of 0 is valid
+            continue;
+          }
+          form_error($element[$container][$property], t('%title is required, or leave all fields empty for this line item.', array(
             '%title' => $element[$container][$property]['#title'],
           )));
         }

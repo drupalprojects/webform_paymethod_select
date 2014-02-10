@@ -14,7 +14,6 @@ function webform_paymethod_select_form_builder_types() {
   unset($map['properties']['default_value']);
   $fields['paymethod_select'] = array(
     'title'         => t('Payment method'),
-    'palette_group' => 'donation',
     'properties'    => array_keys($map['properties']),
     'default'       => array('#form_builder' => array('element_type' => 'paymethod_select')),
     'unique'        => TRUE,

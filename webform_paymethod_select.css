@@ -18,14 +18,14 @@ form .payment-line-item-container.odd {
     background-color: #F8F8F8;
 }
 
-#paymethod-select-wrapper .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-amount-option,
+#form-builder .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-amount-option,
 form .payment-line-item-container .webform-paymethod-select-amount-option {
   clear: both;
   float: none;
   margin-left: 2em;
 }
 
-#paymethod-select-wrapper .form-builder-wrapper .form-builder-group .payment-line-item-container .webform-paymethod-select-line-item-description,
+#form-builder .form-builder-wrapper .form-builder-group .payment-line-item-container .webform-paymethod-select-line-item-description,
 form .payment-line-item-container .webform-paymethod-select-line-item-description {
   float: none;
   clear: both;
