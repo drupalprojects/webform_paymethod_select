@@ -100,7 +100,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
       $value['description']['#wrapper_attributes'] = array(
         'class' => array('webform-paymethod-select-line-item-description'),
         );
-      //dpm($value, 'value');
+
       $value = $line_item_form + $value;
     }
   }

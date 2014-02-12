@@ -9,29 +9,28 @@ use Drupal\little_helpers\Webform\Submission;
 
 class WebformPaymentContext implements PaymentContextInterface {
   protected $submission;
+  protected $nid;
+  protected $sid;
   public $isRecurrent = FALSE;
 
   public function __construct($submission) {
     $this->submission = $submission;
   }
 
-  public static function fromFormState($node, &$form_state) {
-    return new static(new FormState($node, $form_state));
-  }
-
   public function value($key) {
     return $this->submission->valueByKey($key);
   }
 
-  public function transform() {
-    if ($this->submission instanceof FormState) {
-      if ($submission = $this->submission->getSubmission()) {
-        $this->submission = $submission;
-      }
-    }
+  public function __sleep() {
+    $this->nid = $this->submission->getNode()->nid;
+    $this->sid = $this->submission->unwrap()->sid;
+
+    return array('nid', 'sid');
   }
 
-  public function submission() {
-    return $this->submission;
+  public function __wakeup() {
+    if (!empty($this->nid) && !empty($this->sid)) {
+      $this->__construct(Submission::load($this->nid, $this->sid));
+    }
   }
 }
