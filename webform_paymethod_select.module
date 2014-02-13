@@ -6,6 +6,7 @@
 use \Drupal\webform_paymethod_select\WebformPaymentContext;
 use \Drupal\webform_paymethod_select\PaymentRecurrentController;
 use \Drupal\little_helpers\Webform\Submission;
+use \Drupal\little_helpers\Webform\FormState;
 
 if (module_exists('form_builder_webform') == TRUE) {
   require_once dirname(__FILE__) . '/webform_paymethod_select.form_builder.inc';
@@ -119,15 +120,21 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
 
   $payment          = $form_state['payment'];
   $element['#tree'] = TRUE;
-  $recurrent        = FALSE;              ;
   $pmid_options     = array();
 
   if (!empty($element['#selected_payment_methods'])) {
-    foreach ($payment->availablePaymentMethods(entity_load('payment_method', $element['#selected_payment_methods'])) as $payment_method) {
-      if (!$recurrent || $payment_method->controller instanceof PaymentRecurrentController) {
-        $pmid_options[(int) $payment_method->pmid] = check_plain($payment_method->title_generic);
-      }
+    $available_payment_methods = $payment->availablePaymentMethods(entity_load('payment_method', $element['#selected_payment_methods']));
+    foreach ($available_payment_methods as $payment_method) {
+      $pmid_options[(int) $payment_method->pmid] = check_plain($payment_method->title_generic);
     }
+    $node = webform_paymethod_select_get_node($form, $form_state);
+    $context = new WebformPaymentContext(new FormState($node, $form_state));
+    drupal_alter(
+      'webform_paymethod_select_method_list',
+      $context,
+      $available_payment_methods,
+      $pmid_options
+    );
   }
 
   $element['#prefix'] = '<div id="paymethod-select-wrapper">';
