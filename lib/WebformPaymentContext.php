@@ -8,9 +8,10 @@ use Drupal\little_helpers\Webform\FormState;
 use Drupal\little_helpers\Webform\Submission;
 
 class WebformPaymentContext implements PaymentContextInterface {
-  protected $submission;
-  protected $nid;
-  protected $sid;
+  public $submission;
+  public $nid;
+  public $sid;
+  public $methodData;
   public $isRecurrent = FALSE;
 
   public function __construct($submission) {
@@ -18,14 +19,20 @@ class WebformPaymentContext implements PaymentContextInterface {
   }
 
   public function value($key) {
-    return $this->submission->valueByKey($key);
+    $result = FALSE;
+    if (   ($result = $this->submission->valueByKey($key)) == FALSE
+         && isset($this->methodData[$key]) == TRUE) {
+      $result = $this->methodData[$key];
+    }
+
+    return $result;
   }
 
   public function __sleep() {
     $this->nid = $this->submission->getNode()->nid;
     $this->sid = $this->submission->unwrap()->sid;
 
-    return array('nid', 'sid');
+    return array('nid', 'sid', 'methodData');
   }
 
   public function __wakeup() {
