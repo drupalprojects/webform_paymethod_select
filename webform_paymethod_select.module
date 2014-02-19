@@ -88,26 +88,24 @@ function webform_paymethod_select_element_info() {
 /**
  * helper function to preload all forms defined by the individual payment methods
  */
-function _webform_paymethod_select_get_payment_method_form(&$element, &$form_state, $method_name, $pmid) {
-  $payment = $form_state['payment'];
-
-  $form_element_name = webform_paymethod_select_clean_name($payment->method->controller->name);
+function _webform_paymethod_select_get_payment_method_form(&$element, &$form_state, PaymentMethod $method) {
+  $form_element_name = webform_paymethod_select_clean_name($method->controller->name);
 
   $element['payment_method_all_forms'][$form_element_name] = array(
     '#type'        => 'fieldset',
     '#id'          => $form_element_name,
-    '#title'       => t($method_name),
+    '#title'       => t($method->title_generic),
     '#attributes'  => array('class' => array('payment-method-form')),
     '#collapsible' => FALSE,
     '#collapsed'   => FALSE,
     '#states' => array(
       'visible' => array(
-        '#payment-method-selector input' => array('value' => $pmid),
+        '#payment-method-selector input' => array('value' => $method->pmid),
       ),
     ),
   );
 
-  $form_elements_callback = $payment->method->controller->payment_configuration_form_elements_callback;
+  $form_elements_callback = $method->controller->payment_configuration_form_elements_callback;
   if (function_exists($form_elements_callback) == TRUE) {
     $element['payment_method_all_forms'][$form_element_name] += call_user_func($form_elements_callback, $element['payment_method_all_forms'][$form_element_name], $form_state);
   }
@@ -125,7 +123,7 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
   if (!empty($element['#selected_payment_methods'])) {
     $available_payment_methods = $payment->availablePaymentMethods(entity_load('payment_method', $element['#selected_payment_methods']));
     foreach ($available_payment_methods as $payment_method) {
-      $pmid_options[(int) $payment_method->pmid] = check_plain($payment_method->title_generic);
+      $pmid_options[(int) $payment_method->pmid] = check_plain(t($payment_method->title_generic));
     }
     $node = webform_paymethod_select_get_node($form, $form_state);
     $context = new WebformPaymentContext(new FormState($node, $form_state));
@@ -146,57 +144,37 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
     '#attributes'  => array('class' => array('payment-method-all-forms')),
   );
 
-  reset($pmid_options);
+  if (!count($pmid_options)) {
+    if (!$payment->pid) {
+      $form['#disabled'] = TRUE;
+    }
+    $element['pmid_title'] = array(
+      '#type'   => 'item',
+      '#title'  => isset($element['#title']) ? $element['#title'] : NULL,
+      '#markup' => t('There are no payment methods, check the options of this webform element to enable methods.'),
+    );
+  }
+  else {
+    reset($pmid_options);
+    $payment_method_default = isset($payment->method) ? $payment->method->pmid : key($pmid_options);
 
-  switch (count($pmid_options)) {
-    case 0:
-      if (!$payment->pid) {
-        $form['#disabled'] = TRUE;
-      }
-      $element['pmid_title'] = array(
-        '#type'   => 'item',
-        '#title'  => isset($element['#title']) ? $element['#title'] : NULL,
-        '#markup' => t('There are no payment methods, check the options of this webform element to enable methods.'),
-      );
-      break;
+    foreach ($pmid_options as $pmid => $method_name) {
+      $payment->method = $available_payment_methods[$pmid];
+      _webform_paymethod_select_get_payment_method_form($element, $form_state, $payment->method);
+      unset($payment->method);
+    }
 
-    case 1:
-      $pmid        = key($pmid_options);
-      $method_name = current($pmid_options);
-      if (($payment->method = entity_load_single('payment_method', $pmid)) == NULL) {
-        break;
-      }
-
-      _webform_paymethod_select_get_payment_method_form($element, $form_state, $method_name, $pmid);
-
-      break;
-
-    default :
-      $payment_method_options = array();
-      $payment_method_default = isset($payment->method) ? $payment->method->pmid : key($pmid_options);
-
-      foreach ($pmid_options as $pmid => $method_name) {
-        if (($payment->method = entity_load_single('payment_method', $pmid)) == NULL) {
-          continue;
-        }
-
-        $payment_method_options[$pmid] = t($method_name);
-
-        _webform_paymethod_select_get_payment_method_form($element, $form_state, $method_name, $pmid);
-
-        unset($payment->method);
-      }
-
-      $element['payment_method_selector'] = array(
-        '#type'          => 'radios',
-        '#id'            => 'payment-method-selector',
-        '#weight'        => 1,
-        '#title'         => isset($element['#title']) ? $element['#title'] : NULL,
-        '#options'       => $payment_method_options,
-        '#default_value' => $payment_method_default,
-        '#required'      => $element['#required'],
-        '#attributes'    => array('class' => array('paymethod-select-radios')),
-      );
+    $element['payment_method_selector'] = array(
+      '#type'          => 'radios',
+      '#id'            => 'payment-method-selector',
+      '#weight'        => 1,
+      '#title'         => isset($element['#title']) ? $element['#title'] : NULL,
+      '#options'       => $pmid_options,
+      '#default_value' => $payment_method_default,
+      '#required'      => $element['#required'],
+      '#attributes'    => array('class' => array('paymethod-select-radios')),
+      '#access'        => count($pmid_options) > 1,
+    );
   }
   return $element;
 }
@@ -206,25 +184,19 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
  */
 function webform_paymethod_select_form_process_validate(array $element, array &$form_state) {
   $payment = $form_state['payment'];
-  $pmid    = (int) $element['#value']['payment_method_selector'];
+  $values  = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
+  $pmid    = (int) $values['payment_method_selector'];
 
-  if (   empty($payment->method) == TRUE
-      || $payment->method->pmid != $pmid) {
-    $payment->method = entity_load_single('payment_method', $pmid);
-    if ($payment->method->name === 'payment_method_unavailable') {
-      throw new Exception(t('Invalid Payment Method selected.'));
-    }
+  $payment->method = $method = entity_load_single('payment_method', $pmid);
+  if ($payment->method->name === 'payment_method_unavailable') {
+    throw new Exception(t('Invalid Payment Method selected.'));
   }
 
-  $selected_method = webform_paymethod_select_clean_name($payment->method->controller->name);
-
-  $selected_method_validate_callback = $payment->method->controller->payment_configuration_form_elements_callback . '_validate';
-  if (   function_exists($selected_method_validate_callback) == TRUE
-      && !empty($element['payment_method_all_forms'][$selected_method])) {
-    $selected_method_validate_callback(
-      $element['payment_method_all_forms'][$selected_method],
-      $form_state
-    );
+  $method_validate_callback = $method->controller->payment_configuration_form_elements_callback . '_validate';
+  if (function_exists($method_validate_callback)) {
+    $selected_method = webform_paymethod_select_clean_name($method->controller->name);
+    $method_element = &$element['payment_method_all_forms'][$selected_method];
+    $method_validate_callback($method_element, $form_state);
   }
 }
 
