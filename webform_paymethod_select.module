@@ -321,7 +321,6 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
 
     $submission = Submission::load($node->nid, $form_state['values']['details']['sid']);
     $context = new WebformPaymentContext($submission);
-    $context->methodData = $payment->method_data;
     $payment->context_data['context'] = $context;
 
     // handle setting the amount value in line items that were configured to

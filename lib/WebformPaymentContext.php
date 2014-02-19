@@ -11,7 +11,6 @@ class WebformPaymentContext implements PaymentContextInterface {
   public $submission;
   public $nid;
   public $sid;
-  public $methodData;
   public $isRecurrent = FALSE;
 
   public function __construct($submission) {
@@ -19,20 +18,14 @@ class WebformPaymentContext implements PaymentContextInterface {
   }
 
   public function value($key) {
-    $result = FALSE;
-    if (   ($result = $this->submission->valueByKey($key)) == FALSE
-         && isset($this->methodData[$key]) == TRUE) {
-      $result = $this->methodData[$key];
-    }
-
-    return $result;
+    return $this->submission->valueByKey($key);
   }
 
   public function __sleep() {
     $this->nid = $this->submission->getNode()->nid;
     $this->sid = $this->submission->unwrap()->sid;
 
-    return array('nid', 'sid', 'methodData');
+    return array('nid', 'sid');
   }
 
   public function __wakeup() {
