@@ -77,8 +77,7 @@ function _webform_edit_paymethod_select($component) {
   $form['extra']['selected_payment_methods'] = array(
     '#title'         => t('Selected Payment Methods'),
     '#description'   => 'Select 1 or more payment methods that will be available for seletion to the user.',
-    '#type'          => 'select',
-    '#multiple'      => TRUE,
+    '#type'          => 'checkboxes',
     '#options'       => _webform_paymethod_select_payment_method_options(),
     '#default_value' => $settings['selected_payment_methods'],
   );
