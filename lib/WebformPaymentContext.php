@@ -4,33 +4,43 @@
  */
 
 namespace Drupal\webform_paymethod_select;
-use Drupal\little_helpers\Webform\FormState;
-use Drupal\little_helpers\Webform\Submission;
+use Drupal\little_helpers\Webform\Webform;
 
 class WebformPaymentContext implements PaymentContextInterface {
-  public $submission;
-  public $nid;
-  public $sid;
-  public $isRecurrent = FALSE;
+  protected $submission;
 
   public function __construct($submission) {
     $this->submission = $submission;
+  }
+
+  public function getSubmission() {
+    return $this->submission;
+  }
+
+  public function getSuccessUrl() {
+    $submission = $this->submission ? $this->submission->unwrap() : NULL;
+    return $this->submission->webform->getRedirectUrl($submission);
+  }
+
+  public function reenterLink(\Payment $payment) {
+    $link['path'] = 'node/' . $this->submission->weform->nid;
+    return $link;
+  }
+
+  public function getErrorUrl() {
+    return NULL;
   }
 
   public function value($key) {
     return $this->submission->valueByKey($key);
   }
 
-  public function __sleep() {
-    $this->nid = $this->submission->getNode()->nid;
-    $this->sid = $this->submission->unwrap()->sid;
-
-    return array('nid', 'sid');
-  }
-
-  public function __wakeup() {
-    if (!empty($this->nid) && !empty($this->sid)) {
-      $this->__construct(Submission::load($this->nid, $this->sid));
+  public function valueByKeys(array $keys) {
+    foreach ($keys as $k) {
+      $v = $this->submission->valueByKey($k);
+      if ($v) {
+        return $v;
+      }
     }
   }
 }
