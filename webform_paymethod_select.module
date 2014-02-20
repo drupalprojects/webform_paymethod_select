@@ -340,7 +340,7 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
 function webform_paymethod_select_webform_submission_presave($node, &$submission) {
   foreach($node->webform['components'] as $cid => $component) {
     if ($component['type'] == 'paymethod_select') {
-      $submission->data[$cid]['value'] = array();
+      $submission->data[$cid]['value'] = array("no payment data here");
       break;
     }
   }
