@@ -7,6 +7,7 @@ use \Drupal\webform_paymethod_select\WebformPaymentContext;
 use \Drupal\webform_paymethod_select\PaymentRecurrentController;
 use \Drupal\little_helpers\Webform\Submission;
 use \Drupal\little_helpers\Webform\FormState;
+use \Drupal\little_helpers\Webform\Webform;
 
 if (module_exists('form_builder_webform') == TRUE) {
   require_once dirname(__FILE__) . '/webform_paymethod_select.form_builder.inc';
@@ -287,14 +288,14 @@ function webform_paymethod_select_form_alter(&$form, &$form_state, $form_id) {
  */
 function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
   $node = $form['#node'];
-  $webform = Webform($node);
-  if (count($webform->componentsByType('paymethod_select')) {
-
-  if (empty($form_state['payment']) == TRUE) {
-    _webform_paymethod_select_set_payment($form_state, $component);
-  }
-  if (in_array('webform_paymethod_select_form_submit', $form['#submit']) == FALSE) {
-    $form['#submit'][] = 'webform_paymethod_select_form_submit';
+  $webform = new Webform($node);
+  if (count($webform->componentsByType('paymethod_select'))) {
+    if (empty($form_state['payment']) == TRUE) {
+      _webform_paymethod_select_set_payment($form_state, $component);
+    }
+    if (in_array('webform_paymethod_select_form_submit', $form['#submit']) == FALSE) {
+      $form['#submit'][] = 'webform_paymethod_select_form_submit';
+    }
   }
 }
 
@@ -307,9 +308,7 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
  * that also saves the payment into the DB
  */
 function webform_paymethod_select_form_submit($form, &$form_state) {
-  if ( !isset($form_state['webform_completed']) == FALSE /*single page webform submit*/
-        || $form_state['webform_completed']     == TRUE  /*multi page webform submit*/) {
-
+  if (!empty($form_state['webform_completed'])) {
     $payment = &$form_state['payment'];
     $node    = $form['#node'];
 
@@ -352,6 +351,6 @@ function webform_paymethod_select_webform_submission_presave($node, &$submission
  * Implements hook_form_form_builder_webform_save_form_alter().
  */
 function webform_paymethod_select_form_form_builder_webform_save_form_alter(&$form, &$form_state) {
-  $form['#attached']['js'][] = '/misc/ajax.js';
-  $form['#attached']['js'][] = '/misc/states.js';
+  $form['#attached']['js'][] = 'misc/ajax.js';
+  $form['#attached']['js'][] = 'misc/states.js';
 }
