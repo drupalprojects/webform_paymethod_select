@@ -243,26 +243,22 @@ function webform_paymethod_select_get_node(&$form = NULL, &$form_state = NULL) {
  * Helper function to create and add a payment object to the form_state
  */
 function _webform_paymethod_select_set_payment(&$form_state, &$component = NULL) {
-
-  $line_items          = array();
-  $payment_description = t('Default Payment');
-  $currency_code       = 'EUR';
-
-  if ($component != NULL) {
-    $line_items          = $component['extra']['line_items'];
-    $payment_description = $component['extra']['payment_description'];
-    $currency_code       = $component['extra']['currency_code'];
-  }
+  $config = $component ? $component['extra'] : array();
+  $config += array(
+    'line_items' => array(),
+    'payment_description' => t('Default Payment'),
+    'currency_code' => 'EUR',
+  );
 
   $payment = new Payment(
     array(
-      'currency_code'   => $currency_code,
-      'description'     => $payment_description,
+      'currency_code'   => $config['currency_code'],
+      'description'     => $config['payment_description'],
       'finish_callback' => 'webform_paymethod_select_payment_finish',
     )
   );
 
-  foreach ($line_items as $line_item) {
+  foreach ($config['line_items'] as $line_item) {
     $payment->setLineItem($line_item);
   }
   $form_state['payment'] = $payment;
@@ -289,7 +285,9 @@ function webform_paymethod_select_form_alter(&$form, &$form_state, $form_id) {
 function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
   $node = $form['#node'];
   $webform = new Webform($node);
-  if (count($webform->componentsByType('paymethod_select'))) {
+  $components = $webform->componentsByType('paymethod_select');
+  if (count($components)) {
+    $component = array_pop($components);
     if (empty($form_state['payment']) == TRUE) {
       _webform_paymethod_select_set_payment($form_state, $component);
     }
