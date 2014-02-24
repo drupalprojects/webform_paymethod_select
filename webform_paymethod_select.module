@@ -345,6 +345,67 @@ function webform_paymethod_select_webform_submission_presave($node, &$submission
 }
 
 /**
+ * Implements hook_FORM_ID_alter().
+ * Implements hook_form_form_builder_field_configure_alter().
+ *
+ * Generate a list of all available components that might be used as amount_source
+ * and make it available for @see webform_paymethod_select_element_process_line_item().
+ */
+function webform_paymethod_select_form_form_builder_field_configure_alter(&$form, &$form_state) {
+  if ($form['#_edit_element']['#form_builder']['element_type'] != 'paymethod_select') {
+    return;
+  }
+
+  $element = &$form['#_edit_element'];
+  $build_info = &$form_state['build_info'];
+  $other_components = NULL;
+  if ($build_info['form_id'] == 'form_builder_field_configure') {
+    $cache = form_builder_cache_load($build_info['args'][0], $build_info['args'][1]);
+    $cache['#depth'] = -1;
+    $felements[] = &$cache;
+    $other_components = array();
+    while (!empty($felements)) {
+      $felem = array_shift($felements);
+      foreach (array_reverse(element_children($felem, TRUE)) as $key) {
+        $felem[$key]['#depth'] = $felem['#depth'] + 1;
+        array_unshift($felements, $felem[$key]);
+      }
+      if (!empty($felem['#form_builder']) && $felem['#form_builder']['element_id'] != $element['#form_builder']['element_id']) {
+        $other_components[$felem['#form_builder']['element_id']] = str_repeat('-', $felem['#depth']) . ' ' . $felem['#title'];
+      }
+    }
+  }
+  $form_state['payment_line_item_other_components'] = $other_components;
+}
+
+/**
+ * Implements hook_node_presave().
+ *
+ * Transform form_builder-element_id's in ->amount_component
+ * into webform component IDs.
+ */
+function webform_paymethod_select_node_presave($node) {
+  if (!isset($node->webform) || !($cache = form_builder_cache_load('webform', $node->nid))) {
+    return;
+  }
+
+  $webform = new Webform($node);
+  foreach ($webform->componentsByType('paymethod_select') as $component) {
+    foreach ($component['extra']['line_items']['items'] as $item) {
+      if (!empty($item->amount_component) && !is_numeric($item->amount_component)) {
+        if (strpos($item->amount_component, 'cid_') === 0) {
+          $item->amount_component = (int) substr($item->amount_component, 4);
+        }
+        elseif (strpos($item->amount_component, 'new_') === 0) {
+          $element = form_builder_get_element($fcache, $item->amount_component);
+          $item->amount_component = $element['#webform_component']['cid'];
+        }
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  * Implements hook_form_form_builder_webform_save_form_alter().
  */

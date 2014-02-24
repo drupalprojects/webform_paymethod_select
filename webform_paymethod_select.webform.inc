@@ -18,6 +18,7 @@ function _webform_defaults_paymethod_select() {
       'payment_description'      => 'Default Payment',
       'selected_payment_methods' => array(),
       'line_items'               => array(),
+      'currency_code'            => 'EUR',
       'private'                  => FALSE,
     ),
   );
@@ -119,19 +120,23 @@ function _webform_edit_paymethod_select($component) {
 function _webform_render_paymethod_select($component, $value = NULL, $filter = TRUE) {
 
   $pmids = array();
-
   if (!empty($component['extra']['selected_payment_methods'])) {
     foreach ($component['extra']['selected_payment_methods'] as $pmid) {
       $pmids[] = (int) $pmid;
     }
   }
 
-  $element['#type']                     = 'paymethod_select';
-  $element['#title']                    = $component['name'];
-  $element['#required']                 = TRUE;
-  $element['#selected_payment_methods'] = $pmids;
-  $element['#weight']                   = isset($component['weight']) == TRUE ? $component['weight'] : 0;
-  $element['#default_value']            = array_shift($pmids);
+  $element = array(
+    '#type' => 'paymethod_select',
+    '#title' => $component['name'],
+    '#required' => TRUE,
+    '#selected_payment_methods' => $pmids,
+    '#weight' => isset($component['weight']) == TRUE ? $component['weight'] : 0,
+    '#default_value' => array_shift($pmids),
+    '#currency_code' => $component['extra']['currency_code'],
+    '#line_items' => array('items' => $component['extra']['line_items']),
+    '#payment_description' => $component['extra']['payment_description'],
+  );
 
   return $element;
 }
