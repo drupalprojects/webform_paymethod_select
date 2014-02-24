@@ -121,8 +121,10 @@ function _webform_render_paymethod_select($component, $value = NULL, $filter = T
 
   $pmids = array();
   if (!empty($component['extra']['selected_payment_methods'])) {
-    foreach ($component['extra']['selected_payment_methods'] as $pmid) {
-      $pmids[] = (int) $pmid;
+    foreach ($component['extra']['selected_payment_methods'] as $pmid => $enabled) {
+      if ($enabled) {
+        $pmids[$pmid] = $pmid;
+      }
     }
   }
 
