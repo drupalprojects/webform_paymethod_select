@@ -385,7 +385,11 @@ function webform_paymethod_select_form_form_builder_field_configure_alter(&$form
  * into webform component IDs.
  */
 function webform_paymethod_select_node_presave($node) {
-  if (!isset($node->webform) || !($cache = form_builder_cache_load('webform', $node->nid))) {
+  if (
+    !module_exists('form_builder_webform') ||
+    !isset($node->webform) ||
+    !($cache = form_builder_cache_load('webform', $node->nid))
+  ) {
     return;
   }
 
