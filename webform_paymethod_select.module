@@ -385,11 +385,11 @@ function webform_paymethod_select_form_form_builder_field_configure_alter(&$form
  * into webform component IDs.
  */
 function webform_paymethod_select_node_presave($node) {
-  if (
-    !module_exists('form_builder_webform') ||
-    !isset($node->webform) ||
-    !($cache = form_builder_cache_load('webform', $node->nid))
-  ) {
+  if (!module_exists('form_builder_webform') || !isset($node->webform)) {
+    return;
+  }
+  require_once drupal_get_path('module', 'form_builder') . '/includes/form_builder.cache.inc';
+  if (!($cache = form_builder_cache_load('webform', $node->nid))) {
     return;
   }
 
