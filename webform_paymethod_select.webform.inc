@@ -43,7 +43,7 @@ function _webform_paymethod_select_payment_method_options() {
   $payment_method_options = array();
 
   foreach ($payment->availablePaymentMethods() as $pmid => $payment_method) {
-    $payment_method_options[$pmid] = $payment_method->title_generic;
+    $payment_method_options[$pmid] = $payment_method->title_specific;
   }
 
   return $payment_method_options;
