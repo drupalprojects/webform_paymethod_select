@@ -318,7 +318,7 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
     // not have a fixed amount
     foreach ($payment->line_items as $line_item) {
       if ($line_item->amount_source === 'component') {
-        $line_item->amount = (int) round($submission->valueByCid($line_item->amount_component) * 100);
+        $line_item->amount = (float) $submission->valueByCid($line_item->amount_component);
       }
     }
     entity_save('payment', $payment);

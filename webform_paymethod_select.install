@@ -15,24 +15,3 @@
 function webform_paymethod_select_enable() {
   db_query("UPDATE {system} a INNER JOIN {system} b ON a.name = 'webform_paymethod_select' AND b.name = 'webform' SET a.weight = b.weight + 1");
 }
-
-/**
- * Update amount to be stored as cents.
- */
-function webform_paymethod_select_update_1() {
-  $result = db_query("SELECT * FROM {webform_component} WHERE type='paymethod_select'");
-  foreach ($result as $row) {
-    $extra = unserialize($row->extra);
-    foreach ($extra['line_items'] as &$item) {
-      if (isset($item->amount)) {
-        $item->amount = (int) round($item->amount * 100);
-      }
-    }
-    $row->extra = serialize($extra);
-    db_update('webform_component')
-      ->fields($row)
-      ->condition('nid', $row->nid)
-      ->condition('cid', $row->cid)
-      ->execute();
-  }
-}

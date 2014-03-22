@@ -76,7 +76,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#size'          => '20',
         '#maxlength'     => '20',
         '#required'      => FALSE,
-        '#default_value' => number_format($defaults->amount / 100, 2),
+        '#default_value' => $defaults->amount,
         '#wrapper_attributes' => array(
           'class' => array('webform-paymethod-select-amount-option'),
         ),
@@ -155,7 +155,10 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
         }
       }
       if (is_numeric($line_item_data['amount'])) {
-        $line_item_data['amount'] = (int) round($line_item_data['amount'] * 100, 0);
+        $line_item_data['amount'] = (float) $line_item_data['amount'];
+      }
+      else {
+        form_error($element[$container][$property], t('Amount needs to be a valid number.'));
       }
       if (!empty($line_item_data['amount_source']) && $line_item_data['amount_source'] === 'component' && empty($line_item_data['amount_component'])) {
         form_error($element[$container]['amount_component'], t('Select a component that is used as source for the amount.'));
