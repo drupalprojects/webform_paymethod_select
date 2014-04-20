@@ -327,6 +327,14 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
     if ($payment->getStatus()->status == PAYMENT_STATUS_NEW) {
       $payment->execute();
     }
+
+    // Set the component value to the $payment->pid - we don't save any payment data.
+    $webform = $submission->webform;
+    $cids = array_keys($webform->componentsByType('paymethod_select'));
+    db_query(
+      "UPDATE {webform_submitted_data} SET data=:pid WHERE nid=:nid AND cid IN(:cids) AND sid=:sid",
+      array(':nid' => $node->nid, ':cids' => $cids, ':sid' => $submission->sid, ':pid' => $payment->pid)
+    );
   }
 }
 
@@ -336,11 +344,9 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
  * We don't want to save sensitive payment information.
  */
 function webform_paymethod_select_webform_submission_presave($node, &$submission) {
-  foreach($node->webform['components'] as $cid => $component) {
-    if ($component['type'] == 'paymethod_select') {
-      $submission->data[$cid]['value'] = array("no payment data here");
-      break;
-    }
+  $webform = new Webform($node);
+  foreach(array_keys($webform->componentsByType('paymethod_select')) as $cid) {
+    $submission->data[$cid]['value'] = array("no payment data here");
   }
 }
 
