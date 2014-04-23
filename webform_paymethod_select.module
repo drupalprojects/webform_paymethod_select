@@ -101,7 +101,7 @@ function _webform_paymethod_select_get_payment_method_form(&$element, &$form_sta
     '#collapsed'   => FALSE,
     '#states' => array(
       'visible' => array(
-        '#payment-method-selector input' => array('value' => $method->pmid),
+        '#payment-method-selector input' => array('value' => (string) $method->pmid),
       ),
     ),
   );
