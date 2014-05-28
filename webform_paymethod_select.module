@@ -127,7 +127,7 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
       $pmid_options[(int) $payment_method->pmid] = check_plain(t($payment_method->title_generic));
     }
     $node = webform_paymethod_select_get_node($form, $form_state);
-    $context = new WebformPaymentContext(new FormState($node, $form_state));
+    $context = new WebformPaymentContext(new FormState($node, $form, $form_state));
     drupal_alter(
       'webform_paymethod_select_method_list',
       $context,
@@ -194,7 +194,7 @@ function webform_paymethod_select_form_process_validate(array $element, array &$
   }
 
   $node = webform_paymethod_select_get_node();
-  $payment->context_data['context'] = new FormState($node, $form_state);
+  $payment->context_data['context'] = new FormState($node, $form_state['complete form'], $form_state);
 
   $method_validate_callback = $method->controller->payment_configuration_form_elements_callback . '_validate';
   if (function_exists($method_validate_callback)) {
