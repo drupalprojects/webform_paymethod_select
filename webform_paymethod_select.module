@@ -308,6 +308,8 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
 function webform_paymethod_select_form_submit($form, &$form_state) {
   if (!empty($form_state['webform_completed'])) {
     $payment = &$form_state['payment'];
+    // Allow payment controllers to access the form_state.
+    $payment->form_state = &$form_state;
     $node    = $form['#node'];
 
     $submission = Submission::load($node->nid, $form_state['values']['details']['sid']);
