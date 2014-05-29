@@ -17,6 +17,31 @@ require_once dirname(__FILE__) . '/webform_paymethod_select.line_item.inc';
 require_once dirname(__FILE__) . '/webform_paymethod_select.webform.inc';
 
 /**
+ * Implements hook_menu().
+ */
+function webform_paymethod_select_menu() {
+  $menu['webform-payment/error/%entity_object'] = array(
+    'title' => 'Payment failed or cancelled',
+    'load arguments' => array('payment'),
+    'page arguments' => array(2),
+    'page callback' => 'webform_paymethod_select_error_page',
+    'type' => MENU_CALLBACK,
+    'file' => 'webform_paymethod_select.pages.inc',
+    'access callback' => 'webform_paymethod_select_payment_access',
+    'access arguments' => array(2),
+  );
+  return $menu;
+}
+
+function webform_paymethod_select_hmac(\Payment $payment) {
+  return drupal_hmac_base64($payment->pid, drupal_get_hash_salt() . 'webform_paymethod_select');
+}
+
+function webform_paymethod_select_payment_access(\Payment $payment) {
+  return isset($_GET['wpst']) && $_GET['wpst'] == webform_paymethod_select_hmac($payment);
+}
+
+/**
  * Implements hook_webform_component_info().
  */
 function webform_paymethod_select_webform_component_info() {
@@ -39,17 +64,13 @@ function webform_paymethod_select_webform_component_info() {
  * the Payment constructor used for the paymethod_select component
  */
 function webform_paymethod_select_payment_finish(Payment $payment) {
-  switch ($payment->getStatus()->status) {
-    case PAYMENT_STATUS_FAILED:
-      // check if its a setup error
-      // or
-      // a payment processing error
-      break;
-    case PAYMENT_STATUS_SUCCESS:
-      // redirect to thank you page
-      //_webform_confirm_email_send_email($node->nid, $form_state['values']['details']['sid'], 3 /* type custom handler */);
-      break;
-    default:
+  $status = $payment->getStatus()->status;
+  $context = $payment->context_data['context'];
+  if (payment_status_has_ancestor($status, PAYMENT_STATUS_FAILED)) {
+    $context->statusFailed($payment);
+  }
+  elseif (payment_status_has_ancestor($status, PAYMENT_STATUS_SUCCESS)) {
+    $context->statusSuccess($payment);
   }
 }
 
@@ -127,7 +148,7 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
       $pmid_options[(int) $payment_method->pmid] = check_plain(t($payment_method->title_generic));
     }
     $node = webform_paymethod_select_get_node($form, $form_state);
-    $context = new WebformPaymentContext(new FormState($node, $form, $form_state));
+    $context = new WebformPaymentContext(new FormState($node, $form, $form_state), $form_state);
     drupal_alter(
       'webform_paymethod_select_method_list',
       $context,
@@ -313,7 +334,7 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
     $node    = $form['#node'];
 
     $submission = Submission::load($node->nid, $form_state['values']['details']['sid']);
-    $context = new WebformPaymentContext($submission);
+    $context = new WebformPaymentContext($submission, $form_state);
     $payment->context_data['context'] = $context;
 
     // handle setting the amount value in line items that were configured to

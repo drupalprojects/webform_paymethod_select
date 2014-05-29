@@ -8,9 +8,15 @@ use Drupal\little_helpers\Webform\Webform;
 
 class WebformPaymentContext implements PaymentContextInterface {
   protected $submission;
+  protected $form_state;
 
-  public function __construct($submission) {
+  public function __construct($submission, &$form_state) {
     $this->submission = $submission;
+    $this->form_state = &$form_state;
+  }
+
+  public function __sleep() {
+    return array('submission');
   }
 
   public function getSubmission() {
@@ -23,7 +29,7 @@ class WebformPaymentContext implements PaymentContextInterface {
   }
 
   public function reenterLink(\Payment $payment) {
-    $link['path'] = 'node/' . $this->submission->weform->nid;
+    $link['path'] = 'node/' . $this->submission->getNode()->nid;
     return $link;
   }
 
@@ -42,5 +48,23 @@ class WebformPaymentContext implements PaymentContextInterface {
         return $v;
       }
     }
+  }
+
+  public function redirect($path, array $options = array()) {
+    if ($this->form_state) {
+      $this->form_state['redirect'] = array($path, $options);
+    }
+    else {
+      drupal_goto($path, $options);
+    }
+  }
+
+  public function statusFailed(\Payment $payment) {
+    $options['query']['wpst'] = webform_paymethod_select_hmac($payment);
+    $this->redirect('webform-payment/error/' . $payment->pid, $options);
+  }
+
+  public function statusSuccess(\Payment $payment) {
+    $this->redirect($this->getSuccessUrl());
   }
 }
