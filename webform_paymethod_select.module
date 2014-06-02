@@ -51,6 +51,7 @@ function webform_paymethod_select_webform_component_info() {
     'features'    => array(
       'default_value' => FALSE,
       'required'      => TRUE,
+      'csv'           => FALSE,
     ),
     'file' => 'webform_paymethod_select.webform.inc',
   );
