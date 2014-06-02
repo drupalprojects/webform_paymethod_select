@@ -193,7 +193,9 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
  * nested inside a fieldset -> removing 1 nesting level here
  */
 function webform_paymethod_select_webform_component_presave(&$component) {
-  $line_items = &$component['extra']['line_items']['items'];
-  unset($component['extra']['line_items']['items']);
-  $component['extra']['line_items'] = &$line_items;
+  if (isset($component['extra']['line_items']['items'])) {
+    $line_items = &$component['extra']['line_items']['items'];
+    unset($component['extra']['line_items']['items']);
+    $component['extra']['line_items'] = &$line_items;
+  }
 }
