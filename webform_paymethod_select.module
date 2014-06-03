@@ -425,6 +425,10 @@ function webform_paymethod_select_node_presave($node) {
 
   $webform = new Webform($node);
   foreach ($webform->componentsByType('paymethod_select') as $component) {
+    // The items sub-array is only present if the component has been edited.
+    if (!isset($component['extra']['line_items']['items'])) {
+      continue;
+    }
     foreach ($component['extra']['line_items']['items'] as $item) {
       if (!empty($item->amount_component) && !is_numeric($item->amount_component)) {
         if (strpos($item->amount_component, 'cid_') === 0) {
