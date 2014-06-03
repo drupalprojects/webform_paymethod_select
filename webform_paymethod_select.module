@@ -216,7 +216,8 @@ function webform_paymethod_select_form_process_validate(array $element, array &$
   }
 
   $node = webform_paymethod_select_get_node();
-  $payment->context_data['context'] = new FormState($node, $form_state['complete form'], $form_state);
+  $context = new WebformPaymentContext(new FormState($node, $form_state['complete form'], $form_state), $form_state);
+  $payment->context_data['context'] = $context;
 
   $method_validate_callback = $method->controller->payment_configuration_form_elements_callback . '_validate';
   if (function_exists($method_validate_callback)) {
@@ -224,6 +225,7 @@ function webform_paymethod_select_form_process_validate(array $element, array &$
     $method_element = &$element['payment_method_all_forms'][$selected_method];
     $method_validate_callback($method_element, $form_state);
   }
+  $payment->context_data['context'] = NULL;
 }
 
 /**
