@@ -179,7 +179,7 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
     }
 
     // Convert the raw input to a PaymentLineItem object.
-    $line_items[] = new Drupal\webform_paymethod_select\PaymethodLineItem($data);
+    $line_items[] = new \Drupal\webform_paymethod_select\PaymethodLineItem($data);
   }
 
   form_set_value($element, $line_items, $form_state);
