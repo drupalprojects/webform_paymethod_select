@@ -164,7 +164,7 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
     }
 
     if ($data['amount_source'] == 'fixed') {
-      if (is_numeric($data['amount']) || $data['amount'] < 0) {
+      if (is_numeric($data['amount']) && $data['amount'] >= 0) {
         $data['amount'] = (float) $data['amount'];
       }
       else {
