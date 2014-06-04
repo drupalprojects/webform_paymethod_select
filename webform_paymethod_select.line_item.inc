@@ -61,8 +61,6 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         $defaults->amount_component = 'cid_' . $defaults->amount_component;
       }
 
-      $line_element['tax_rate']['#default_value'] = $defaults->tax_rate;
-      $line_element['quantity']['#default_value'] = $defaults->quantity;
       $radio_id = drupal_html_id('webform-paymethod-select-' . $key . '-amount-source');
       $line_element['amount_source'] = array(
         '#attributes'    => array('class' => array($radio_id)),
