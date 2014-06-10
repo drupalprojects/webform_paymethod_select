@@ -59,9 +59,16 @@ class WebformPaymentContext implements PaymentContextInterface {
     }
   }
 
-  public function statusFailed(\Payment $payment) {
+  public function redirectToStatus(\Payment $payment) {
     $options['query']['wpst'] = webform_paymethod_select_hmac($payment);
     $this->redirect('webform-payment/error/' . $payment->pid, $options);
+  }
+
+  public function statusPending(\Payment $payment) {
+    // Only redirect to the status page if we are not in the form submit process.
+    if (empty($this->form_state)) {
+      $this->redirectToStatus($payment);
+    }
   }
 
   public function statusSuccess(\Payment $payment) {

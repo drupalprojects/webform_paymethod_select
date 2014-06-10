@@ -67,11 +67,14 @@ function webform_paymethod_select_webform_component_info() {
 function webform_paymethod_select_payment_finish(Payment $payment) {
   $status = $payment->getStatus()->status;
   $context = $payment->context_data['context'];
-  if (payment_status_is_or_has_ancestor($status, PAYMENT_STATUS_FAILED)) {
-    $context->statusFailed($payment);
-  }
-  elseif (payment_status_is_or_has_ancestor($status, PAYMENT_STATUS_SUCCESS)) {
+  if (payment_status_is_or_has_ancestor($status, PAYMENT_STATUS_SUCCESS)) {
     $context->statusSuccess($payment);
+  }
+  elseif (payment_status_is_or_has_ancestor($status, PAYMENT_STATUS_PENDING)) {
+    $context->statusPending($payment);
+  }
+  else {
+    $context->redirectToStatus($payment);
   }
 }
 
