@@ -171,8 +171,10 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
   );
 
   if (!count($pmid_options)) {
-    if (!$payment->pid) {
-      $form['#disabled'] = TRUE;
+    if (!$payment->pid && isset($form['actions']['submit'])) {
+      // when no payment method is selected (or available) disable submit
+      // button
+      $form['actions']['submit']['#disabled'] = TRUE;
     }
     $element['pmid_title'] = array(
       '#type'   => 'item',
