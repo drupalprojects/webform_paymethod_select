@@ -249,6 +249,9 @@ function webform_paymethod_select_get_node(&$form = NULL, &$form_state = NULL) {
     elseif (isset($form_state['build_info']) && $form_state['build_info']['form_id'] == 'form_builder_field_configure') {
       $node = node_load($form_state['build_info']['args'][1]);
     }
+    elseif (isset($form['#form_builder']) && $form['#form_builder']['form_type'] == 'webform') {
+      $node = node_load($form['#form_builder']['form_id']);
+    }
     else {
       if (($node = menu_get_object()) == NULL) {
         $get = NULL;
