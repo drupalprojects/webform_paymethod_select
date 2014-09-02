@@ -72,6 +72,8 @@ class WebformPaymentContext implements PaymentContextInterface {
   }
 
   public function statusSuccess(\Payment $payment) {
-    $this->redirect($this->getSuccessUrl());
+    if (!$this->form_state) {
+      $this->redirect($this->getSuccessUrl());
+    }
   }
 }
