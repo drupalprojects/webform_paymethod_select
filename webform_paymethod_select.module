@@ -161,8 +161,9 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
     );
   }
 
-  $element['#prefix'] = '<div id="paymethod-select-wrapper">';
-  $element['#suffix'] = '</div>';
+  $element['#theme_wrappers'] = array('container');
+  $element['#id'] = 'paymethod-select-wrapper';
+  $element['#attributes']['class'][] = 'paymethod-select-wrapper';
   $element['payment_method_all_forms'] = array(
     '#type'        => 'container',
     '#id'          => 'payment-method-all-forms',
