@@ -4,7 +4,8 @@
  */
 
 namespace Drupal\webform_paymethod_select;
-use Drupal\little_helpers\Webform\Webform;
+use \Drupal\little_helpers\Webform\Webform;
+use \Drupal\payment_forms\PaymentContextInterface;
 
 class WebformPaymentContext implements PaymentContextInterface {
   protected $submission;

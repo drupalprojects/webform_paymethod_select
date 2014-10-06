@@ -8,6 +8,7 @@ use \Drupal\webform_paymethod_select\PaymentRecurrentController;
 use \Drupal\little_helpers\Webform\Submission;
 use \Drupal\little_helpers\Webform\FormState;
 use \Drupal\little_helpers\Webform\Webform;
+use \Drupal\payment_forms\PaymentContextInterface;
 
 if (module_exists('form_builder_webform') == TRUE) {
   require_once dirname(__FILE__) . '/webform_paymethod_select.form_builder.inc';
@@ -114,7 +115,7 @@ function webform_paymethod_select_element_info() {
 /**
  * helper function to preload all forms defined by the individual payment methods
  */
-function _webform_paymethod_select_get_payment_method_form(&$element, &$form_state, PaymentMethod $method) {
+function _webform_paymethod_select_get_payment_method_form(&$element, &$form_state, PaymentMethod $method, PaymentContextInterface $context) {
   $form_element_name = webform_paymethod_select_clean_name($method->controller->name);
 
   $element['payment_method_all_forms'][$form_element_name] = array(
@@ -133,7 +134,7 @@ function _webform_paymethod_select_get_payment_method_form(&$element, &$form_sta
 
   $form_elements_callback = $method->controller->payment_configuration_form_elements_callback;
   if (function_exists($form_elements_callback) == TRUE) {
-    $element['payment_method_all_forms'][$form_element_name] += call_user_func($form_elements_callback, $element['payment_method_all_forms'][$form_element_name], $form_state);
+    $element['payment_method_all_forms'][$form_element_name] += call_user_func($form_elements_callback, $element['payment_method_all_forms'][$form_element_name], $form_state, $context);
   }
 }
 
@@ -189,7 +190,7 @@ function webform_paymethod_select_form_process(array $element, array &$form_stat
 
     foreach ($pmid_options as $pmid => $method_name) {
       $payment->method = $available_payment_methods[$pmid];
-      _webform_paymethod_select_get_payment_method_form($element, $form_state, $payment->method);
+      _webform_paymethod_select_get_payment_method_form($element, $form_state, $payment->method, $context);
       unset($payment->method);
     }
 
