@@ -122,7 +122,8 @@ function _webform_paymethod_select_get_payment_method_form(&$element, &$form_sta
     '#type'        => 'fieldset',
     '#id'          => $form_element_name,
     '#title'       => t($method->title_generic),
-    '#attributes'  => array('class' => array('payment-method-form')),
+    '#attributes'  => array('class' => array('payment-method-form'),
+			    'data-pmid' => $method->pmid),
     '#collapsible' => FALSE,
     '#collapsed'   => FALSE,
     '#states' => array(
