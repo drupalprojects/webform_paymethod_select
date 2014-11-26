@@ -118,26 +118,20 @@ function _webform_edit_paymethod_select($component) {
  * Implements _webform_render_[component]().
  */
 function _webform_render_paymethod_select($component, $value = NULL, $filter = TRUE) {
-
-  $pmids = array();
-  if (!empty($component['extra']['selected_payment_methods'])) {
-    foreach ($component['extra']['selected_payment_methods'] as $pmid => $enabled) {
-      if ($enabled) {
-        $pmids[$pmid] = $pmid;
-      }
-    }
-  }
-
   $element = array(
-    '#type' => 'paymethod_select',
+    '#type' => 'container',
     '#title' => $component['name'],
     '#required' => TRUE,
-    '#selected_payment_methods' => $pmids,
     '#weight' => isset($component['weight']) == TRUE ? $component['weight'] : 0,
-    '#default_value' => array_shift($pmids),
+    // This is needed for form_builder to resave already stored values when
+    // the component's options are not touched during a form_builder session.
+    '#selected_payment_methods' => $component['extra']['selected_payment_methods'],
     '#currency_code' => $component['extra']['currency_code'],
     '#line_items' => array('items' => $component['extra']['line_items']),
     '#payment_description' => $component['extra']['payment_description'],
+  );
+  $element['placeholder_info'] = array(
+    '#markup' => '<p>' . t('This is just a placeholder for the payment method selector. The actual component is rendered dynamically based on the other form elements.') . '</p>',
   );
 
   return $element;
