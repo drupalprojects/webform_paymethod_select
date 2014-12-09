@@ -112,8 +112,9 @@ class Component {
       $pmid_options[$pmid] = check_plain(t($payment_method->title_generic));
     }
 
-    unset($element['placeholder_info']);
+    unset($element['#theme']);
     $element += array(
+      '#type' => 'container',
       '#tree' => TRUE,
       '#theme_wrappers' => array('container'),
       '#id' => drupal_html_id('paymethod-select-wrapper'),

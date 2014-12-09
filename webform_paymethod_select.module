@@ -44,6 +44,17 @@ function webform_paymethod_select_payment_access(\Payment $payment) {
 }
 
 /**
+ * Implements hook_theme().
+ */
+function webform_paymethod_select_theme() {
+  $hooks['webform_paymethod_select_placeholder'] = array(
+    'render element' => 'element',
+    'file' => 'webform_paymethod_select.theme.inc',
+  );
+  return $hooks;
+}
+
+/**
  * Implements hook_webform_component_info().
  */
 function webform_paymethod_select_webform_component_info() {

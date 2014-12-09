@@ -120,6 +120,7 @@ function _webform_edit_paymethod_select($component) {
 function _webform_render_paymethod_select($component, $value = NULL, $filter = TRUE) {
   $element = array(
     '#type' => 'container',
+    '#theme' => 'webform_paymethod_select_placeholder',
     '#title' => $component['name'],
     '#required' => TRUE,
     '#weight' => isset($component['weight']) == TRUE ? $component['weight'] : 0,
@@ -129,9 +130,6 @@ function _webform_render_paymethod_select($component, $value = NULL, $filter = T
     '#currency_code' => $component['extra']['currency_code'],
     '#line_items' => array('items' => $component['extra']['line_items']),
     '#payment_description' => $component['extra']['payment_description'],
-  );
-  $element['placeholder_info'] = array(
-    '#markup' => '<p>' . t('This is just a placeholder for the payment method selector. The actual component is rendered dynamically based on the other form elements.') . '</p>',
   );
 
   return $element;
