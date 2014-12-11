@@ -44,6 +44,17 @@ class Component {
   }
 
   /**
+   * Get the list of selected payment methods.
+   *
+   * @return array
+   *   List of \PaymentMethod objects keyed by their pmids.
+   */
+  public function selectedMethods() {
+    $pmids = array_keys(array_filter($this->component['extra']['selected_payment_methods']));
+    return entity_load('payment_method', $pmids);
+  }
+
+  /**
    * Get the list of available and selected payment methods.
    *
    * @param \Drupal\payment_forms\PaymentContextInterface $context
@@ -53,8 +64,7 @@ class Component {
    *   List of \PaymentMethod objects keyed by their pmids.
    */
   protected function getMethods($context) {
-    $pmids = array_keys(array_filter($this->component['extra']['selected_payment_methods']));
-    $methods = entity_load('payment_method', $pmids);
+    $methods = $this->selectedMethods();
     // @TODO Use $payment->context instead?
     $this->payment->context_data['context'] = $context;
     if (!empty($methods)) {

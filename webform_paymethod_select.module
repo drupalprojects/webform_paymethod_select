@@ -291,3 +291,127 @@ function webform_paymethod_select_form_form_builder_webform_save_form_alter(&$fo
   $form['#attached']['js'][] = 'misc/ajax.js';
   $form['#attached']['js'][] = 'misc/states.js';
 }
+
+/**
+ * Implements hook_webform_submission_load().
+ *
+ * Add payment objects to their submissions. The objects will be accessible
+ * under $submission->payments[$cid].
+ */
+function webform_paymethod_select_webform_submission_load(&$submissions) {
+  static $recursion = FALSE;
+  if ($recursion) {
+    return;
+  }
+  $recursion = TRUE;
+  $cids = array();
+  $pids = array();
+
+  // Create a list of all stored pids mapped to submissions and cids.
+  foreach ($submissions as $sid => $submission) {
+    $nid = $submission->nid;
+    if (!isset($cids[$nid])) {
+      $webform = new Webform(node_load($nid));
+      $cids[$nid] = array_keys($webform->componentsByType('paymethod_select'));
+    }
+    elseif (!$cids[$nid]) {
+      continue;
+    }
+
+    $submission->payments = array();
+
+    foreach ($cids[$nid] as $cid) {
+      $submission->payments[$cid] = NULL;
+      if (isset($submission->data[$cid]) && !empty($submission->data[$cid]['value'])) {
+        $maybe_pid = $submission->data[$cid]['value'][0];
+        if (($pid = (int) $maybe_pid) == $maybe_pid) {
+          if (!isset($pids[$pid])) {
+            $pids[$pid] = array();
+          }
+          $pids[$pid][$sid][] = $cid;
+        }
+      }
+    }
+  }
+
+  // Load payment objects and add them to the submission objects.
+  $payments = entity_load('payment', array_keys($pids));
+  foreach ($payments as $pid => $payment) {
+    foreach ($pids[$pid] as $sid => $cids) {
+      foreach ($cids as $cid) {
+        $submissions[$sid]->payments[$cid] = $payment;
+      }
+    }
+  }
+  $recursion = FALSE;
+}
+
+/**
+ * Check if a payment controller implements the results data interface.
+ *
+ * We can't use interfaces here since we also want the payment controllers
+ * to work without webform_paymethod_select.
+ * We could use a subclass of the controller in that case but doesn't scale beyond
+ * one optional class since 2^(number of extensions)-1 sub-classes would be needed.
+ * Perhaps we should do a payment_extensions module instead that declares all the
+ * interfaces.
+ *
+ * FTW we use duck-typing instead.
+ *
+ * @param stdclass $object
+ *   Object to check.
+ *
+ * @return bool
+ *   True if the objects implements the webformData interface.
+ */
+function webform_paymethod_select_implements_data_interface($object) {
+  return method_exists($object, 'webformDataInfo') && method_exists($object, 'webformData');
+}
+
+/**
+ * Implements hook_webform_results_download_submission_information_info().
+ */
+function webform_paymethod_select_webform_results_download_submission_information_info($node, $options) {
+  $webform = new Webform($node);
+  $info = array();
+  $components = $webform->componentsByType('paymethod_select');
+  $single_cid = count($components) == 1;
+  foreach ($components as $cid => $component) {
+    $componentObj = new Component($component);
+    $pfx = $single_cid ? 'payment_' : "payment_{$cid}_";
+    $info[$pfx . 'pid'] = t('Payment ID');
+    $info[$pfx . 'method'] = t('Payment method');
+    $info[$pfx . 'status'] = t('Payment status');
+    foreach ($componentObj->selectedMethods() as $payment_method) {
+      if (webform_paymethod_select_implements_data_interface($payment_method->controller)) {
+        foreach ($payment_method->controller->webformDataInfo() as $key => $data) {
+          $info[$pfx . $key] = $data;
+        }
+      }
+    }
+  }
+  return $info;
+}
+
+/**
+ * Implements hook_webform_results_download_submission_information_data().
+ */
+function webform_paymethod_select_webform_results_download_submission_information_data($submission, array $options, $serial_start, $row_count) {
+  $data = array();
+  if (empty($submission->payments)) {
+    return $data;
+  }
+  $single_cid = count($submission->payments) == 1;
+  foreach ($submission->payments as $cid => $payment) {
+    $pfx = $single_cid ? 'payment_' : "payment_{$cid}_";
+    $data[$pfx . 'pid'] = $payment->pid;
+    $data[$pfx . 'method'] = $payment->method->title_specific;
+    $data[$pfx . 'status'] = $payment->getStatus()->status;
+    if (webform_paymethod_select_implements_data_interface($payment->method->controller)) {
+      foreach ($payment->method->controller->webformData($payment) as $key => $v) {
+        $data[$pfx . $key] = $v;
+      }
+    }
+  }
+  return $data;
+}
