@@ -187,7 +187,7 @@ class Component {
     if (function_exists($method_validate_callback)) {
       // @TODO: pass the payment object directly.
       $form_state['payment'] = $payment;
-      $method_element = &$element['payment_methods_all_forms'][$pmid];
+      $method_element = &$element['payment_method_all_forms'][$pmid];
       $method_validate_callback($method_element, $form_state);
     }
   }
