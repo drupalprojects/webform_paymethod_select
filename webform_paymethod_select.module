@@ -173,7 +173,7 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
       $parents = array($component['form_key']);
       $parent = $component;
       while ($parent['pid'] != 0) {
-        $parent = $components[$parent['pid']];
+        $parent = $webform->component($parent['pid']);
         array_unshift($parents, $parent['form_key']);
       }
       $componentObj = &$form_state['webform_paymethod_select'][$cid];

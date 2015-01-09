@@ -156,7 +156,7 @@ class Component {
       $pmid_default = isset($this->payment->method) ? $this->payment->method->pmid : key($pmid_options);
 
       foreach ($pmid_options as $pmid => $method_name) {
-        $element['payment_methods_all_forms'][$pmid] = $this->methodForm($methods[$pmid], $form_state, $context);
+        $element['payment_method_all_forms'][$pmid] = $this->methodForm($methods[$pmid], $form_state, $context);
       }
 
       $element['payment_method_selector'] = array(
