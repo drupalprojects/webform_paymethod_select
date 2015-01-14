@@ -188,6 +188,16 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
     $element = &drupal_array_get_nested_value($form['submitted'], $parents);
     $componentObj->render($element, $form, $form_state);
   }
+
+  // Monkey-patch webform_ajax to allow us to redirect from any page of a
+  // multi-page webform.
+  foreach (array('previous', 'next', 'submit', 'draft') as $button) {
+    if (isset($form['actions'][$button]['#ajax'])) {
+      if ($form['actions'][$button]['#ajax']['callback'] == 'webform_ajax_callback') {
+        $form['actions'][$button]['#ajax']['callback'] = 'webform_paymethod_select_ajax_callback';
+      }
+    }
+  }
 }
 
 /**
@@ -226,14 +236,49 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
       $form_state['webform_completed'] = FALSE;
       unset($form_state['save_draft']);
       // Display the same step again instead of another one.
+      // Completely repopulate the $form_state['storage'] if needed.
+      if (!isset($form_state['storage'])) {
+        $form_state['storage']['component_tree'] = $form_state['webform']['component_tree'];
+        $form_state['storage']['page_count'] = $form_state['webform']['page_count'];
+      }
       $form_state['storage']['page_num'] = $page_num;
+
       // Redirect instead of rebuild if all non-success-components are pending.
       if ($pending) {
         $form_state['rebuild'] = FALSE;
       }
+      else {
+        $form_state['rebuild'] = TRUE;
+      }
     }
   }
 }
+
+/**
+ * AJAX callback for Webform Prev/Next page and Submit buttons.
+ *
+ * Returns the new computed webform, unless it has been completed or redirected.
+ *
+ * This is a copy of @see webform_ajax_callback() that allows us to redirect
+ * the user from any page of a multi-page webform.
+ */
+function webform_paymethod_select_ajax_callback($form, &$form_state) {
+  $output = array();
+  // If user completed his submission, determine what to do.
+  if (!empty($form_state['webform_completed']) && empty($form_state['save_draft'])) {
+    $output = _webform_ajax_callback_completed($form, $form_state);
+  }
+  // The user is redirected by a payment controller.
+  elseif (!empty($form_state['redirect'])) {
+    $output = _webform_ajax_callback_completed($form, $form_state);
+  }
+  // Else, we're just switching page, or saving draft.
+  else {
+    $output = $form;
+  }
+  return $output;
+}
+
 
 /**
  * Implements hook_webform_submission_presave().
