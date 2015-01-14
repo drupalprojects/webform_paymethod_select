@@ -1,24 +1,20 @@
 <?php
 
 /**
- * Page callback that shows a simple error page.
+ * Page callback for continuing a webform submission after payment.
  */
-function webform_paymethod_select_error_page(\Payment $payment) {
-  $status = $payment->getStatus()->status;
-  $context = $payment->context_data['context'];
-  $link = $context->reenterLink($payment);
-  if (payment_status_is_or_has_ancestor($status, PAYMENT_STATUS_PENDING)) {
-    $message = t('The payment is still pending although it should be processed by now. Something went wrong. Please !tryagainlink or contact the site administrator if the problem persists.', array(
-      '!tryagainlink' => l('try again', $link['path'], $link),
-    ));
-  }
-  else {
-    $message = t('An error occured while processing your payment. Please !tryagainlink or contact the site administrator if the problem persists.', array(
-      '!tryagainlink' => l('try again', $link['path'], $link),
-    ));
-  }
-  $output = array(
-    '#markup' => $message,
-  );
-  return $output;
+function webform_paymethod_select_continue($node, $submission, $page_num) {
+  // We can't use a simple drupal_get_form() because we wan't to enter the form
+  // at a specific $page_num.
+  $form_state = array();
+
+  $args = array($node, $submission, TRUE, TRUE);
+  $form_state['build_info']['args'] = $args;
+
+  $form_state['storage']['component_tree'] = array();
+  $form_state['storage']['page_count'] = 1;
+  _webform_components_tree_build($node->webform['components'], $form_state['storage']['component_tree'], 0, $form_state['storage']['page_count']);
+  $form_state['storage']['page_num'] = $page_num;
+
+  return drupal_build_form('webform_client_form_' . $node->nid, $form_state);
 }

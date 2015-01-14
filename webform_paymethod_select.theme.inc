@@ -1,6 +1,36 @@
 <?php
 
 /**
+ * Returns HTML for the webform component if there is already a payment with
+ * a successful status..
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - element: the placeholder element with the following special keys:
+ *     - #title: The component name.
+ *     - #payment_description
+ *     - #selected_payment_methods: Enabled payment methods (pmids) for this
+ *         component.
+ *     - #currency_code: Code of the selected currency.
+ *     - #line_items: An array of payment_line_items.
+ *     - #payment: The payment object.
+ *
+ * @ingroup themeable
+ */
+function theme_webform_paymethod_select_already_paid(&$variables) {
+  $element = &$variables['element'];
+  $payment = $element['#payment'];
+
+  $render = array(
+    '#theme_wrappers' => array('fieldset'),
+    '#title' => t('Payment made.'),
+    '#description' => t('The payment has been processed successfully.'),
+  );
+
+  return render($render);
+}
+
+/**
  * Returns HTML for the webform_paymethod_select form_builder placeholder.
  *
  * @param array $variables

@@ -44,6 +44,35 @@ class Component {
   }
 
   /**
+   * Load a payment object from the database and reset it's line items.
+   *
+   * @param int $pid
+   *   Payment ID.
+   */
+  protected function reloadPayment($pid) {
+    $this->payment = entity_load_single('payment', $pid);
+    foreach ($this->component['extra']['line_items'] as $i => $line_item) {
+      $this->payment->setLineItem($line_item);
+    }
+  }
+
+  /**
+   * Get a list of parent form keys for this component.
+   *
+   * @return array
+   *   List of parent form keys - just like $element['#parents'].
+   */
+  public function parents($webform) {
+    $parents = array($this->component['form_key']);
+    $parent = $this->component;
+    while ($parent['pid'] != 0) {
+      $parent = $webform->component($parent['pid']);
+      array_unshift($parents, $parent['form_key']);
+    }
+    return $parents;
+  }
+
+  /**
    * Get the list of selected payment methods.
    *
    * @return array
@@ -114,7 +143,7 @@ class Component {
    * Render the webform component.
    */
   public function render(&$element, &$form, &$form_state) {
-    $context = new WebformPaymentContext(new FormState($form['#node'], $form, $form_state), $form_state);
+    $context = new WebformPaymentContext(new FormState($form['#node'], $form, $form_state), $form_state, $this->component);
 
     $pmid_options = array();
     $methods = $this->getMethods($context);
@@ -123,6 +152,22 @@ class Component {
     }
 
     unset($element['#theme']);
+    if (!empty($element['#value']) && is_numeric($element['#value'])) {
+      if (!$this->payment->pid || $this->payment->pid != $element['#value']) {
+        $this->reloadPayment($element['#value']);
+      }
+    }
+    if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)){
+      $element['#theme'] = 'webform_paymethod_select_already_paid';
+      $element['#payment'] = $this->payment;
+      return;
+    }
+    elseif (!$this->statusIsOneOf(PAYMENT_STATUS_NEW)) {
+      $status = payment_status_info($this->payment->getStatus()->status)->title;
+      $element['error'] = array(
+        '#markup' => t('The previous payment attempt seems to have failed. The current payment status is "!status". Please try again!', array('!status' => $status))
+      );
+    }
     $element += array(
       '#type' => 'container',
       '#tree' => TRUE,
@@ -192,16 +237,15 @@ class Component {
     }
   }
 
-  public function submit(&$form, &$form_state) {
+  public function submit(&$form, &$form_state, $submission) {
+    if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)){
+      return;
+    }
     $payment = $this->payment;
-    $node = $form['#node'];
 
-    $submission = Submission::load($node->nid, $form_state['values']['details']['sid']);
-    $context = new WebformPaymentContext($submission, $form_state);
-    $payment->context_data['context'] = $context;
-
-    // handle setting the amount value in line items that were configured to
-    // not have a fixed amount
+    // Set the payment up for a (possibly repeated) payment attempt.
+    // Handle setting the amount value in line items that were configured to
+    // read their amount from a component.
     foreach ($payment->line_items as $line_item) {
       if ($line_item->amount_source === 'component') {
         $amount = $submission->valueByCid($line_item->amount_component);
@@ -211,19 +255,32 @@ class Component {
     }
     $values = $form_state['values']['submitted'][$this->component['cid']];
     $payment->method = entity_load_single('payment_method', $values['payment_method_selector']);
+    $context = new WebformPaymentContext($submission, $form_state, $this->component);
+    $payment->context_data['context'] = $context;
+    if ($payment->getStatus()->status != PAYMENT_STATUS_NEW) {
+      $payment->setStatus(new \PaymentStatusItem(PAYMENT_STATUS_NEW));
+    }
     entity_save('payment', $payment);
 
-    // Execute the payment.
-    if ($payment->getStatus()->status == PAYMENT_STATUS_NEW) {
-      $payment->execute();
-    }
-
     // Set the component value to the $payment->pid - we don't save any payment data.
-    $webform = $submission->webform;
-    $cids = array_keys($webform->componentsByType('paymethod_select'));
+    $node = $submission->webform->node;
     db_query(
       "UPDATE {webform_submitted_data} SET data=:pid WHERE nid=:nid AND cid=:cid AND sid=:sid",
-      array(':nid' => $node->nid, ':cid' => $this->component['cid'], ':sid' => $submission->sid, ':pid' => $payment->pid)
+      array(':nid' => $node->nid, ':cid' => $this->component['cid'], ':sid' => $submission->unwrap()->sid, ':pid' => $payment->pid)
     );
+
+    // Execute the payment.
+    $payment->execute();
+  }
+
+  public function statusIsOneOf() {
+    $statuses = func_get_args();
+    $status = $this->payment->getStatus()->status;
+    foreach ($statuses as $s) {
+      if (payment_status_is_or_has_ancestor($status, $s)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
   }
 }

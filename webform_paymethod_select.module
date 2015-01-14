@@ -22,25 +22,35 @@ require_once dirname(__FILE__) . '/webform_paymethod_select.webform.inc';
  * Implements hook_menu().
  */
 function webform_paymethod_select_menu() {
-  $menu['webform-payment/error/%entity_object'] = array(
-    'title' => 'Payment failed or cancelled',
-    'load arguments' => array('payment'),
-    'page arguments' => array(2),
-    'page callback' => 'webform_paymethod_select_error_page',
+  $menu['node/%node/webform-continue/%webform_menu_submission/%'] = array(
+    'title callback' => 'node_page_title',
+    'title arguments' => array(1),
+    'page callback' => 'webform_paymethod_select_continue',
+    'page arguments' => array(1, 3, 4),
+    'access callback' => 'webform_paymethod_select_continue_access',
+    'access arguments' => array(1, 3, 4),
+    'load arguments' => array(1),
     'type' => MENU_CALLBACK,
     'file' => 'webform_paymethod_select.pages.inc',
-    'access callback' => 'webform_paymethod_select_payment_access',
-    'access arguments' => array(2),
   );
   return $menu;
 }
 
-function webform_paymethod_select_hmac(\Payment $payment) {
-  return drupal_hmac_base64($payment->pid, drupal_get_hash_salt() . 'webform_paymethod_select');
+function _webform_paymethod_select_reenter_hash($nid, $sid, $page_num) {
+  $key = drupal_get_hash_salt() . __FILE__;
+  return drupal_hmac_base64("$nid:$sid:$page_num", $key);
 }
 
-function webform_paymethod_select_payment_access(\Payment $payment) {
-  return isset($_GET['wpst']) && $_GET['wpst'] == webform_paymethod_select_hmac($payment);
+function webform_paymethod_select_continue_access($node, $submission, $page_num) {
+  if (empty($node->webform) || empty($node->webform['components'])) {
+    return FALSE;
+  }
+  $last_component = end($node->webform['components']);
+  if (((int) $page_num) != $page_num || $page_num < 0 || $page_num > $last_component['page_num']) {
+    return FALSE;
+  }
+  $hash = _webform_paymethod_select_reenter_hash($node->nid, $submission->sid, $page_num);
+  return isset($_GET['hash']) && $_GET['hash'] == $hash;
 }
 
 /**
@@ -48,6 +58,10 @@ function webform_paymethod_select_payment_access(\Payment $payment) {
  */
 function webform_paymethod_select_theme() {
   $hooks['webform_paymethod_select_placeholder'] = array(
+    'render element' => 'element',
+    'file' => 'webform_paymethod_select.theme.inc',
+  );
+  $hooks['webform_paymethod_select_already_paid'] = array(
     'render element' => 'element',
     'file' => 'webform_paymethod_select.theme.inc',
   );
@@ -83,30 +97,9 @@ function webform_paymethod_select_payment_finish(Payment $payment) {
   if (payment_status_is_or_has_ancestor($status, PAYMENT_STATUS_SUCCESS)) {
     $context->statusSuccess($payment);
   }
-  elseif (payment_status_is_or_has_ancestor($status, PAYMENT_STATUS_PENDING)) {
-    return;
-  }
   else {
     $context->redirectToStatus($payment);
   }
-}
-
-/**
- * Helper function to get a cleaned payment method controller name
- * this is necessary for controller names that include PHP namespaces
- */
-function webform_paymethod_select_clean_name($controller_name) {
-  return drupal_clean_css_identifier(
-    $controller_name,
-    array(
-      ' ' => '-',
-      '_' => '-',
-      '/' => '-',
-      '[' => '-',
-      ']' => '',
-      '\\' => '',
-    )
-  );
 }
 
 /**
@@ -115,7 +108,6 @@ function webform_paymethod_select_clean_name($controller_name) {
 function webform_paymethod_select_component_element_validate(array $element, array &$form_state) {
   $component = $form_state['webform_paymethod_select'][$element['#cid']];
   $component->validate($element, $form_state);
-
 }
 
 /**
@@ -166,23 +158,35 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
   $webform = new Webform($form['#node']);
   $components = $webform->componentsByType('paymethod_select');
   if (count($components)) {
-    $form['#submit'][] = 'webform_paymethod_select_form_submit';
-  }
-  foreach ($components as $cid => $component) {
-    if ($component['page_num'] == $form_state['webform']['page_num']) {
-      $parents = array($component['form_key']);
-      $parent = $component;
-      while ($parent['pid'] != 0) {
-        $parent = $webform->component($parent['pid']);
-        array_unshift($parents, $parent['form_key']);
-      }
-      $componentObj = &$form_state['webform_paymethod_select'][$cid];
-      if (!$componentObj) {
-        $componentObj = new Component($component);
-      }
-      $element = &drupal_array_get_nested_value($form['submitted'], $parents);
-      $componentObj->render($element, $form, $form_state);
+    // Add our submit handler right before webform_client_form_submit.
+    $position = array_search('webform_client_form_submit', $form['#submit']);
+    if ($position !== FALSE) {
+      array_splice($form['#submit'], $position, 0, 'webform_paymethod_select_form_submit');
     }
+    else {
+      $form['#submit'][] = 'webform_paymethod_select_form_submit';
+    }
+  }
+
+  // Initialize all component objects in the $form_state.
+  if (!isset($form_state['webform_paymethod_select'])) {
+    for ($i = 1; $i <= $form_state['webform']['page_count']; $i++) {
+      $form_state['webform_paymethod_select']['pages'][$i] = array();
+    }
+    foreach ($components as $cid => $component) {
+      $page_num = $component['page_num'];
+      $form_state['webform_paymethod_select'][$cid] = new Component($component);
+      $form_state['webform_paymethod_select']['pages'][$page_num][] = $cid;
+    }
+  }
+
+  // Render all components for the current page.
+  $page_num = $form_state['webform']['page_num'];
+  foreach ($form_state['webform_paymethod_select']['pages'][$page_num] as $cid) {
+    $componentObj = $form_state['webform_paymethod_select'][$cid];
+    $parents = $componentObj->parents($webform);
+    $element = &drupal_array_get_nested_value($form['submitted'], $parents);
+    $componentObj->render($element, $form, $form_state);
   }
 }
 
@@ -195,9 +199,38 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
  * that also saves the payment into the DB
  */
 function webform_paymethod_select_form_submit($form, &$form_state) {
-  if (!empty($form_state['webform_completed'])) {
-    foreach ($form_state['webform_paymethod_select'] as $cid => $component) {
-      $component->submit($form, $form_state);
+  if (end($form_state['clicked_button']['#parents']) == 'previous') {
+    return;
+  }
+  $page_num = $form_state['webform']['page_num'];
+  if (!empty($form_state['webform_paymethod_select']['pages'][$page_num])) {
+    $draft = !empty($form_state['save_draft']);
+    $form_state['save_draft'] = TRUE;
+    webform_client_form_submit($form, $form_state);
+    $submission = Submission::load($form['#node']->nid, $form_state['values']['details']['sid']);
+
+    $success = TRUE;
+    $pending = TRUE;
+    foreach ($form_state['webform_paymethod_select']['pages'][$page_num] as $cid) {
+      $component = $form_state['webform_paymethod_select'][$cid];
+      $component->submit($form, $form_state, $submission);
+      $pending = $pending && $component->statusIsOneOf(PAYMENT_STATUS_PENDING, PAYMENT_STATUS_SUCCESS);
+      $success = $success && $component->statusIsOneOf(PAYMENT_STATUS_SUCCESS);
+    }
+    // Restore draft flag when all payments were successful.
+    if ($success) {
+      $form_state['save_draft'] = $draft;
+    }
+    else {
+      // Avoid running webform_client_form.
+      $form_state['webform_completed'] = FALSE;
+      unset($form_state['save_draft']);
+      // Display the same step again instead of another one.
+      $form_state['storage']['page_num'] = $page_num;
+      // Redirect instead of rebuild if all non-success-components are pending.
+      if ($pending) {
+        $form_state['rebuild'] = FALSE;
+      }
     }
   }
 }
