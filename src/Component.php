@@ -86,7 +86,7 @@ class Component {
   /**
    * Get the list of available and selected payment methods.
    *
-   * @param \Drupal\payment_forms\PaymentContextInterface $context
+   * @param \Drupal\payment_context\PaymentContextInterface $context
    *   The payment context used for the alter hook.
    *
    * @return array
@@ -112,7 +112,7 @@ class Component {
    * @return array
    *   Form-API fieldset.
    */
-  protected function methodForm($method, &$form_state, $context) {
+  protected function methodForm($method, &$form_state) {
     $payment = clone $this->payment;
     $payment->method = $method;
 
@@ -130,10 +130,9 @@ class Component {
     );
 
     $form_elements_callback = $method->controller->payment_configuration_form_elements_callback;
-    // @TODO Explicitly pass the payment to the form callback.
-    $form_state['payment'] = $payment;
     if (function_exists($form_elements_callback) == TRUE) {
-      $element += $form_elements_callback($element, $form_state, $context);
+      // $element is changed by reference.
+      $form_elements_callback($element, $form_state, $payment);
     }
     return $element;
   }
@@ -199,9 +198,11 @@ class Component {
       reset($pmid_options);
       $pmid_default = isset($this->payment->method) ? $this->payment->method->pmid : key($pmid_options);
 
+      $this->payment->contextObj = $context;
       foreach ($pmid_options as $pmid => $method_name) {
-        $element['payment_method_all_forms'][$pmid] = $this->methodForm($methods[$pmid], $form_state, $context);
+        $element['payment_method_all_forms'][$pmid] = $this->methodForm($methods[$pmid], $form_state);
       }
+      $this->payment->contextObj = NULL;
 
       $element['payment_method_selector'] = array(
         '#type'          => 'radios',
@@ -229,10 +230,8 @@ class Component {
 
     $method_validate_callback = $method->controller->payment_configuration_form_elements_callback . '_validate';
     if (function_exists($method_validate_callback)) {
-      // @TODO: pass the payment object directly.
-      $form_state['payment'] = $payment;
       $method_element = &$element['payment_method_all_forms'][$pmid];
-      $method_validate_callback($method_element, $form_state);
+      $method_validate_callback($method_element, $form_state, $payment);
     }
   }
 

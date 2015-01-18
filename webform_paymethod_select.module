@@ -9,7 +9,6 @@ use \Drupal\webform_paymethod_select\Component;
 use \Drupal\little_helpers\Webform\Submission;
 use \Drupal\little_helpers\Webform\FormState;
 use \Drupal\little_helpers\Webform\Webform;
-use \Drupal\payment_forms\PaymentContextInterface;
 
 if (module_exists('form_builder_webform') == TRUE) {
   require_once dirname(__FILE__) . '/webform_paymethod_select.form_builder.inc';
@@ -150,8 +149,7 @@ function webform_paymethod_select_get_node(&$form = NULL, &$form_state = NULL) {
 /**
  * Implements hook_form_<BASE form ID>_alter().
  *
- * We need to ensure a payment object is set in $form_state['payment']
- * This alters all webforms using the paymethod_select webform component
+ * Actual rendering of the paymethod_select components.
  */
 function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
   $webform = new Webform($form['#node']);
@@ -167,7 +165,7 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
     }
   }
 
-  // Initialize all component objects in the $form_state.
+  // Initialize all component objects in the $form_state if needed.
   if (!isset($form_state['webform_paymethod_select'])) {
     for ($i = 1; $i <= $form_state['webform']['page_count']; $i++) {
       $form_state['webform_paymethod_select']['pages'][$i] = array();

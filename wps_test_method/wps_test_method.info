@@ -3,4 +3,5 @@ description = A dummy payment method specifically designed for testing payment c
 core = 7.x
 
 dependencies[] = payment
+dependencies[] = payment_context
 dependencies[] = psr0
