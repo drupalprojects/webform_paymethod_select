@@ -93,12 +93,11 @@ function webform_paymethod_select_webform_component_info() {
  */
 function webform_paymethod_select_payment_finish(Payment $payment) {
   $status = $payment->getStatus()->status;
-  $context = $payment->context_data['context'];
   if (payment_status_is_or_has_ancestor($status, PAYMENT_STATUS_SUCCESS)) {
-    $context->statusSuccess($payment);
+    $payment->contextObj->statusSuccess($payment);
   }
   else {
-    $context->redirectToStatus($payment);
+    $payment->contextObj->redirectToStatus($payment);
   }
 }
 
@@ -492,4 +491,12 @@ function webform_paymethod_select_webform_results_download_submission_informatio
     }
   }
   return $data;
+}
+
+/**
+ * Implements hook_payment_context_info().
+ */
+function webform_paymethod_select_payment_context_info() {
+  $classes['webform_paymethod_select'] = '\\Drupal\\webform_paymethod_select\\WebformPaymentContext';
+  return $classes;
 }

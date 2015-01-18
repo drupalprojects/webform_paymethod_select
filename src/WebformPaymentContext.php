@@ -4,8 +4,9 @@
  */
 
 namespace Drupal\webform_paymethod_select;
+use \Drupal\little_helpers\Webform\Submission;
 use \Drupal\little_helpers\Webform\Webform;
-use \Drupal\payment_forms\PaymentContextInterface;
+use \Drupal\payment_context\PaymentContextInterface;
 
 class WebformPaymentContext implements PaymentContextInterface {
   protected $submission;
@@ -19,13 +20,38 @@ class WebformPaymentContext implements PaymentContextInterface {
     $this->form_state = &$form_state;
   }
 
+  public function name() { return 'webform_paymethod_select'; }
+
+  /**
+   * Serialize this object into an array for storing in the context_data column
+   * of the payment table.
+   */
+  public function toContextData() {
+    return $this->submission->ids() + array(
+      'cid' => $this->component['cid'],
+    );
+  }
+
+  public static function fromContextData($data) {
+    $submission = Submission::load($data['nid'], $data['sid']);
+    $component = $submission->webform->component($data['cid']);
+    $form_state = NULL;
+    return new static($submission, $form_state, $component);
+  }
+
   public function __sleep() {
     $this->_cid = $this->component['cid'];
-    return array('_cid', 'submission');
+    return array('submission', 'component');
   }
 
   public function __wakeup() {
-    $this->component = &$this->submission->webform->component($this->_cid);
+    if (isset($this->_cid)) {
+      $this->component = &$this->submission->webform->component($this->_cid);
+    }
+    else {
+      $components = $this->submission->webform->componentsByType('paymethod_select');
+      $this->component = reset($components);
+    }
   }
 
   public function getSubmission() {
@@ -37,6 +63,11 @@ class WebformPaymentContext implements PaymentContextInterface {
     return $this->submission->webform->getRedirectUrl($submission);
   }
 
+  /**
+   * Return a path that can be used to re-enter the form if the payment failed.
+   *
+   * @return a link array
+   */
   public function reenterLink(\Payment $payment) {
     $link['path'] = 'node/' . $this->submission->getNode()->nid;
     return $link;

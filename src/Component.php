@@ -94,12 +94,11 @@ class Component {
    */
   protected function getMethods($context) {
     $methods = $this->selectedMethods();
-    // @TODO Use $payment->context instead?
-    $this->payment->context_data['context'] = $context;
+    $this->payment->contextObj = $context;
     if (!empty($methods)) {
       $methods = $this->payment->availablePaymentMethods($methods);
     }
-    unset($this->payment->context_data['context']);
+    $this->payment->contextObj = NULL;
     // @TODO implement  a more straight-forward interface for the alter hook
     //       ie. use only $methods and $context as arguments.
     $methods_copy = $methods;
@@ -256,7 +255,7 @@ class Component {
     $values = $form_state['values']['submitted'][$this->component['cid']];
     $payment->method = entity_load_single('payment_method', $values['payment_method_selector']);
     $context = new WebformPaymentContext($submission, $form_state, $this->component);
-    $payment->context_data['context'] = $context;
+    $payment->contextObj = $context;
     if ($payment->getStatus()->status != PAYMENT_STATUS_NEW) {
       $payment->setStatus(new \PaymentStatusItem(PAYMENT_STATUS_NEW));
     }

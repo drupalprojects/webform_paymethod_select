@@ -3,6 +3,8 @@
  * @file
  */
 
+use \Drupal\webform_paymethod_select\WebformPaymentContext;
+
 /**
  * Implements hook_enable().
  *
@@ -11,7 +13,48 @@
  * we want this to ensure our form submit handler is set *after*
  * the webform submit handler so our payment methods can redirect
  * in the payment->execute() call
+ *
+ * @TODO is this really still needed?
  */
 function webform_paymethod_select_enable() {
   db_query("UPDATE {system} a INNER JOIN {system} b ON a.name = 'webform_paymethod_select' AND b.name = 'webform' SET a.weight = b.weight + 1");
+}
+
+/**
+ * Update / unify payment context data.
+ */
+function webform_paymethod_select_update_1() {
+  $last_pid = 0;
+  // Get the first paymethod_select component for each node with payments.
+  // We need them later to map context data without cid.
+  $sql = "SELECT nid, cid FROM {webform_component} WHERE type='paymethod_select' ORDER BY nid, cid GROUP BY nid";
+  $cid_by_nid = db_query($sql)->fetchAssoc();
+
+  // Loop over all stored payments.
+  $sql = 'SELECT pid FROM {payment} WHERE pid>:last_pid LIMIT 100';
+  while ($pids = db_query($sql, array(':last_pid' => $last_pid))) {
+    $entities = entity_load('payment', $pids, array(), TRUE);
+    foreach ($entities as $pid => $payment) {
+      $cd = $payment->context_data;
+      if ($payment->contextObj instanceof WebformPaymentContext) {
+        // Everything is perfect - nothing to do.
+      }
+      // Try to get the context from ->context_data['context'].
+      elseif (!empty($cd['context']) && $cd['context'] instanceof WebformPaymentContext) {
+        $payment->contextObj = $cd['context'];
+        entity_save('payment', $payment);
+      }
+      // Try to get the context data from an array containing nid and sid.
+      elseif (is_array($cd) && !empty($cd['nid']) && !empty($cd['sid'])) {
+        if (!isset($cd['cid']) && isset($cid_by_nid[$cd['nid']])) {
+          $cd['cid'] = $cid_by_nid[$cd['nid']];
+        }
+        if (!empty($cd['cid'])) {
+          $payment->contextObj = WebformPaymentContext::fromContextData($cd);
+          entity_save('payment', $payment);
+        }
+      }
+      $last_pid = $pid;
+    }
+  }
 }

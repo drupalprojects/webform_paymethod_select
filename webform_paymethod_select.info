@@ -4,6 +4,7 @@ core = 7.x
 
 dependencies[] = little_helpers
 dependencies[] = payment (>1.5)
+dependencies[] = payment_context
 dependencies[] = payment_forms
 dependencies[] = psr0
 dependencies[] = webform

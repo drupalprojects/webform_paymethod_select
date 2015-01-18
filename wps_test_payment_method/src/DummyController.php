@@ -2,6 +2,8 @@
 
 namespace Drupal\wps_test_method;
 
+use \Drupal\payment_forms\PaymentContextInterface;
+
 class DummyController extends \PaymentMethodController {
   public $payment_configuration_form_elements_callback = '\\Drupal\\wps_test_method\\form_elements';
   public function __construct() {
@@ -36,13 +38,7 @@ class DummyController extends \PaymentMethodController {
     }
 
     if ($redirect) {
-      if (isset($payment->context_data['context'])) {
-        $context = $payment->context_data['context'];
-        $context->redirect($redirect[0], $redirect[1]);
-      }
-      else {
-        drupal_goto($redirect[0], $redirect[1]);
-      }
+      $payment->contextObj->redirect($redirect[0], $redirect[1]);
     }
   }
 }
