@@ -128,6 +128,8 @@ class Component {
         ),
       ),
     );
+    $js = drupal_get_path('module', 'webform_paymethod_select') . '/webform_paymethod_select.js';
+    $element['#attached']['js'][] = $js;
 
     $form_elements_callback = $method->controller->payment_configuration_form_elements_callback;
     if (function_exists($form_elements_callback) == TRUE) {
