@@ -478,6 +478,9 @@ function webform_paymethod_select_webform_results_download_submission_informatio
   }
   $single_cid = count($submission->payments) == 1;
   foreach ($submission->payments as $cid => $payment) {
+    if (!$payment) {
+      continue;
+    }
     $pfx = $single_cid ? 'payment_' : "payment_{$cid}_";
     $data[$pfx . 'pid'] = $payment->pid;
     $data[$pfx . 'method'] = $payment->method->title_specific;
