@@ -27,12 +27,12 @@ function webform_paymethod_select_update_1() {
   $last_pid = 0;
   // Get the first paymethod_select component for each node with payments.
   // We need them later to map context data without cid.
-  $sql = "SELECT nid, cid FROM {webform_component} WHERE type='paymethod_select' ORDER BY nid, cid GROUP BY nid";
+  $sql = "SELECT nid, cid FROM {webform_component} WHERE type='paymethod_select' GROUP BY nid ORDER BY cid";
   $cid_by_nid = db_query($sql)->fetchAssoc();
 
   // Loop over all stored payments.
   $sql = 'SELECT pid FROM {payment} WHERE pid>:last_pid LIMIT 100';
-  while ($pids = db_query($sql, array(':last_pid' => $last_pid))) {
+  while ($pids = db_query($sql, array(':last_pid' => $last_pid))->fetchCol()) {
     $entities = entity_load('payment', $pids, array(), TRUE);
     foreach ($entities as $pid => $payment) {
       $cd = $payment->context_data;
