@@ -1,8 +1,32 @@
 <?php
 
 /**
+ * Returns HTML for the webform component if payment options are displayed.
+ * @param array $variables
+ *   - element: the placeholder element with the following special keys:
+ *     - #title: The component name.
+ *     - #payment_description
+ *     - #selected_payment_methods: Enabled payment methods (pmids) for this
+ *         component.
+ *     - #currency_code: Code of the selected currency.
+ *     - #line_items: An array of payment_line_items.
+ *     - #payment: The payment object.
+ *
+ * @ingroup themeable
+ */
+function theme_webform_paymethod_select_component(&$variables) {
+  $element = &$variables['element'];
+  $children = element_children($element, TRUE);
+  $output = '';
+  foreach ($children as $key) {
+    $children .= drupal_render($elements[$key]);
+  }
+  return $output;
+}
+
+/**
  * Returns HTML for the webform component if there is already a payment with
- * a successful status..
+ * a successful status.
  *
  * @param array $variables
  *   An associative array containing:
@@ -42,6 +66,7 @@ function theme_webform_paymethod_select_already_paid(&$variables) {
  *         component.
  *     - #currency_code: Code of the selected currency.
  *     - #line_items: An array of payment_line_items.
+ *     - #payment: The payment object.
  *
  * @ingroup themeable
  */

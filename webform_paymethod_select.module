@@ -56,14 +56,13 @@ function webform_paymethod_select_continue_access($node, $submission, $page_num)
  * Implements hook_theme().
  */
 function webform_paymethod_select_theme() {
-  $hooks['webform_paymethod_select_placeholder'] = array(
+  $options = array(
     'render element' => 'element',
     'file' => 'webform_paymethod_select.theme.inc',
   );
-  $hooks['webform_paymethod_select_already_paid'] = array(
-    'render element' => 'element',
-    'file' => 'webform_paymethod_select.theme.inc',
-  );
+  $hooks['webform_paymethod_select_component'] = $options;
+  $hooks['webform_paymethod_select_placeholder'] = $options;
+  $hooks['webform_paymethod_select_already_paid'] = $options;
   return $hooks;
 }
 
