@@ -33,18 +33,32 @@ class WebformPaymentContext implements PaymentContextInterface {
   }
 
   public static function fromContextData($data) {
-    $submission = Submission::load($data['nid'], $data['sid']);
-    $component = $submission->webform->component($data['cid']);
-    $form_state = NULL;
-    return new static($submission, $form_state, $component);
+    if (($submission = Submission::load($data['nid'], $data['sid'])) &&
+        ($component = $submission->webform->component($data['cid']))) {
+      $form_state = NULL;
+      return new static($submission, $form_state, $component);
+    }
   }
 
+  /**
+   * @deprecated Serializing contexts is not a good idea. Use toContext()
+   *   and fromContext() instead.
+   */
   public function __sleep() {
     $this->_cid = $this->component['cid'];
     return array('submission', 'component');
   }
 
+  /**
+   * @deprecated @see __sleep().
+   */
   public function __wakeup() {
+    if (!$this->submission && isset($this->nid) && isset($this->sid)) {
+      $this->submission = Submission::load($this->nid, $this->sid);
+      if (!$this->submission) {
+        throw new \UnexpectedValueException('Submission seems to have vanished');
+      }
+    }
     if (isset($this->_cid)) {
       $this->component = &$this->submission->webform->component($this->_cid);
     }
