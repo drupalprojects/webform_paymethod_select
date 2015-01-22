@@ -170,6 +170,7 @@ class Component {
     }
     $element += array(
       '#type' => 'container',
+      '#theme' => 'webform_paymethod_select_component',
       '#tree' => TRUE,
       '#theme_wrappers' => array('container'),
       '#id' => drupal_html_id('paymethod-select-wrapper'),
