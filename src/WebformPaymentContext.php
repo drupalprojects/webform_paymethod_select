@@ -174,9 +174,8 @@ class WebformPaymentContext implements PaymentContextInterface {
   }
 
   public function reenterWebform($page_num) {
-    $nid = $this->submission->webform->node->nid;
-    $sid = $this->submission->sid;
-    $options['query']['hash'] = _webform_paymethod_select_reenter_hash($nid, $sid, $page_num);
-    $this->redirect("node/$nid/webform-continue/$sid/$page_num", $options);
+    $ids = $this->submission->ids();
+    $options['query']['hash'] = _webform_paymethod_select_reenter_hash($ids['nid'], $ids['sid'], $page_num);
+    $this->redirect("node/{$ids['nid']}/webform-continue/{$ids['sid']}/$page_num", $options);
   }
 }
