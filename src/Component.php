@@ -29,13 +29,11 @@ class Component {
       'currency_code' => 'EUR',
     );
 
-    $payment = new \Payment(
-      array(
-        'currency_code'   => $config['currency_code'],
-        'description'     => $config['payment_description'],
-        'finish_callback' => 'webform_paymethod_select_payment_finish',
-      )
-    );
+    $payment = entity_create('payment', array(
+      'currency_code'   => $config['currency_code'],
+      'description'     => $config['payment_description'],
+      'finish_callback' => 'webform_paymethod_select_payment_finish',
+    ));
 
     foreach ($config['line_items'] as $line_item) {
       $payment->setLineItem($line_item);

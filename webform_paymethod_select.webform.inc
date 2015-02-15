@@ -32,13 +32,11 @@ function _webform_defaults_paymethod_select() {
  */
 function _webform_paymethod_select_payment_method_options() {
   // temporary payment object used just in this function
-  $payment = new Payment(
-    array(
-      'currency_code'   => 'EUR',
-      'description'     => t('Default Payment'),
-      'finish_callback' => 'webform_paymethod_select_payment_finish',
-    )
-  );
+  $payment = entity_create('payment', array(
+    'currency_code'   => 'EUR',
+    'description'     => t('Default Payment'),
+    'finish_callback' => 'webform_paymethod_select_payment_finish',
+  ));
 
   $payment_method_options = array();
 
