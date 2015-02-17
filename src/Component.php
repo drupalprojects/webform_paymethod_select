@@ -267,6 +267,7 @@ class Component {
       "UPDATE {webform_submitted_data} SET data=:pid WHERE nid=:nid AND cid=:cid AND sid=:sid",
       array(':nid' => $node->nid, ':cid' => $this->component['cid'], ':sid' => $submission->unwrap()->sid, ':pid' => $payment->pid)
     );
+    $form_state['values']['submitted'][$this->component['cid']] = array($payment->pid);
 
     // Execute the payment.
     $payment->execute();

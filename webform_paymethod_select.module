@@ -197,7 +197,7 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
 }
 
 /**
- * form submit handler added in hook_form_webform_client_form_alter() containing
+ * Form submit handler added in hook_form_webform_client_form_alter() containing
  * the paymethod_select webform component
  *
  * it's main purpose is to call the execute method of the payment object
@@ -228,7 +228,7 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
       $form_state['save_draft'] = $draft;
     }
     else {
-      // Avoid running webform_client_form.
+      // Avoid running webform_client_form_submit().
       $form_state['webform_completed'] = FALSE;
       unset($form_state['save_draft']);
       // Display the same step again instead of another one.
@@ -284,7 +284,10 @@ function webform_paymethod_select_ajax_callback($form, &$form_state) {
 function webform_paymethod_select_webform_submission_presave($node, &$submission) {
   $webform = new Webform($node);
   foreach(array_keys($webform->componentsByType('paymethod_select')) as $cid) {
-    $submission->data[$cid]['value'] = array("no payment data here");
+    $value = $submission->data[$cid]['value'];
+    if (!is_array($value) || !is_numeric($value[0]) || count($value) > 1) {
+      $submission->data[$cid]['value'] = array(NULL);
+    }
   }
 }
 
