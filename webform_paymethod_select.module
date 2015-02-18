@@ -285,7 +285,7 @@ function webform_paymethod_select_webform_submission_presave($node, &$submission
   $webform = new Webform($node);
   foreach(array_keys($webform->componentsByType('paymethod_select')) as $cid) {
     $value = $submission->data[$cid]['value'];
-    if (!is_array($value) || !is_numeric($value[0]) || count($value) > 1) {
+    if (!is_array($value) || !isset($value[0]) || !is_numeric($value[0]) || count($value) > 1) {
       $submission->data[$cid]['value'] = array(NULL);
     }
   }
