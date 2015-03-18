@@ -205,7 +205,8 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
  * that also saves the payment into the DB
  */
 function webform_paymethod_select_form_submit($form, &$form_state) {
-  if (end($form_state['clicked_button']['#parents']) == 'previous') {
+  $button = end($form_state['clicked_button']['#parents']);
+  if ($button != 'next' && $button != 'submit') {
     return;
   }
   $page_num = $form_state['webform']['page_num'];
