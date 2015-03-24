@@ -71,8 +71,16 @@ Webform.prototype.bind = function() {
 Webform.prototype.validate = function(submitter) {
   if (Drupal.payment_handler) {
     this.$form.find('.paymethod-select-wrapper').each(function() {
-      var pmid = $('.paymethod-select-radios input:checked', this).val();
-      var $fieldset = $('[data-pmid='+pmid+']', this);
+      var pmid, $fieldset;
+      var $radios = $('.paymethod-select-radios input:checked', this);
+      if ($radios.length > 0) {
+        pmid = $('.paymethod-select-radios input:checked', this).val();
+        $fieldset = $('[data-pmid='+pmid+']', this);
+      }
+      else {
+        $fieldset = $('.payment-method-form', this).first();
+        pmid = parseInt($fieldset.data('pmid'));
+      }
       if (pmid in Drupal.payment_handler) {
         var ret = Drupal.payment_handler[pmid](pmid, $fieldset, submitter);
         if (!ret) {
