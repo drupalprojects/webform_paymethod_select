@@ -41,7 +41,9 @@ var Webform = function($form) {
 Webform.prototype.bind = function() {
   var self = this;
   this.$form.find('.form-actions input[type=submit]').click(function(event) {
-    this.activeButton = event.target;
+    if (!self.passSubmit) {
+      self.activeButton = event.target;
+    }
   });
   this.$form.bind('submit', function (event) {
     var button = self.activeButton;
