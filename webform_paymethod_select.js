@@ -14,9 +14,11 @@ ExecuteOnceReady.prototype.execute = function() {
   }
 }
 ExecuteOnceReady.prototype.start = function() {
+  var self = this;
   this.started = true;
   if (this.needed <= 0) {
-    this.execute();
+    // Force this to be asynchronous.
+    setTimeout(function() { self.execute(); }, 0);
   }
 }
 ExecuteOnceReady.prototype.ready = function() {
