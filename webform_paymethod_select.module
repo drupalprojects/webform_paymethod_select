@@ -237,6 +237,7 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
       if (!isset($form_state['storage'])) {
         $form_state['storage']['component_tree'] = $form_state['webform']['component_tree'];
         $form_state['storage']['page_count'] = $form_state['webform']['page_count'];
+        $form_state['storage']['preview'] = !empty($form_state['webform']['preview']);
       }
       $form_state['storage']['page_num'] = $page_num;
 
@@ -285,9 +286,12 @@ function webform_paymethod_select_ajax_callback($form, &$form_state) {
 function webform_paymethod_select_webform_submission_presave($node, &$submission) {
   $webform = new Webform($node);
   foreach(array_keys($webform->componentsByType('paymethod_select')) as $cid) {
-    $value = $submission->data[$cid]['value'];
+    $value = &$submission->data[$cid];
+    if (!function_exists('webform_replace_tokens')) {
+      $value = &$value['value'];
+    }
     if (!is_array($value) || !isset($value[0]) || !is_numeric($value[0]) || count($value) > 1) {
-      $submission->data[$cid]['value'] = array(NULL);
+      $value = array(NULL);
     }
   }
 }
