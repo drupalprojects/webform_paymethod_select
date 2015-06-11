@@ -25,8 +25,8 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
     $other_components = $form_state['payment_line_item_other_components'];
   }
   else {
-    $other_components = array();
-    foreach (webform_component_list($node, FALSE) as $cid => $component) {
+    $other_components = webform_component_list($node, FALSE);
+    foreach ($other_components as $cid => $component) {
       if ($node->webform['components'][$cid]['type'] == 'paymethod_select') {
         unset($other_components[$cid]);
       }
