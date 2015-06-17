@@ -94,7 +94,14 @@ class Component {
     $methods = $this->selectedMethods();
     $this->payment->contextObj = $context;
     if (!empty($methods)) {
-      $methods = $this->payment->availablePaymentMethods($methods);
+      foreach ($methods as $pmid => $method) {
+        try {
+          $method->validate($this->payment, TRUE);
+        }
+        catch (PaymentValidationException $e) {
+          unset($methods[$pmid]);
+        }
+      }
     }
     $this->payment->contextObj = NULL;
     // @TODO implement  a more straight-forward interface for the alter hook
