@@ -98,7 +98,7 @@ class Component {
         try {
           $method->validate($this->payment, TRUE);
         }
-        catch (PaymentValidationException $e) {
+        catch (\PaymentValidationException $e) {
           unset($methods[$pmid]);
         }
       }
