@@ -18,7 +18,9 @@ class DummyController extends \PaymentMethodController {
     if (!$strict)
       return;
 
-    sleep($payment->context_data['method_data']['validate_timeout']);
+    if (isset($payment->context_data['method_data'])) {
+      sleep($payment->context_data['method_data']['validate_timeout']);
+    }
   }
 
   /**

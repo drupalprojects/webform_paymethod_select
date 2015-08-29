@@ -1,16 +1,29 @@
 (function ($) {
 
-var ExecuteOnceReady = function(exec) {
+var ExecuteOnceReady = function(exec, error, final) {
   this.execute_function = exec;
+  this.error_function = error;
+  this.final_function = final;
   this.executed = false;
   this.started = false;
   this.needed = 0;
+  this.veto = false;
   return this;
 }
 ExecuteOnceReady.prototype.execute = function() {
   if (!this.executed) {
     this.executed = true;
-    this.execute_function();
+    if (!this.veto) {
+      this.execute_function();
+    }
+    else {
+      if (this.error_function) {
+        this.error_function();
+      }
+    }
+    if (this.final_function) {
+      this.final_function();
+    }
   }
 }
 ExecuteOnceReady.prototype.start = function() {
@@ -21,11 +34,15 @@ ExecuteOnceReady.prototype.start = function() {
     setTimeout(function() { self.execute(); }, 0);
   }
 }
-ExecuteOnceReady.prototype.ready = function() {
+ExecuteOnceReady.prototype.ready = function(veto) {
+  this.veto = this.veto || veto;
   this.needed--;
   if (this.started && this.needed <= 0) {
     this.execute();
   }
+}
+ExecuteOnceReady.prototype.error = function() {
+  this.ready(true);
 }
 ExecuteOnceReady.prototype.need = function() {
   this.needed++;
@@ -53,7 +70,12 @@ Webform.prototype.bind = function() {
       return;
     }
     event.preventDefault();
-    self.validate(new ExecuteOnceReady(self.submitFunction()));
+    self.showProgress();
+    self.validate(new ExecuteOnceReady(
+      self.submitFunction(),
+      function() { self.removeProgress(); },
+      null
+    ));
     self.activeButton = null;
   });
   if (this.$form.find('[name=webform_ajax_wrapper_id]').length > 0) {
@@ -63,8 +85,14 @@ Webform.prototype.bind = function() {
       if (button && $(button).attr('formnovalidate') || self.passSubmit) {
         return;
       }
+      self.activeButton = button;
       veto.veto = true;
-      self.validate(new ExecuteOnceReady(self.ajaxSubmitFunction(options)));
+      self.showProgress();
+      self.validate(new ExecuteOnceReady(
+        self.ajaxSubmitFunction(options),
+        null,
+        function() { self.removeProgress(); }
+      ));
       self.activeButton = null;
     });
   }
@@ -92,7 +120,7 @@ Webform.prototype.validate = function(submitter) {
     });
   }
   submitter.start();
-}
+};
 
 Webform.prototype.submitFunction = function() {
   var self = this;
@@ -100,7 +128,7 @@ Webform.prototype.submitFunction = function() {
   return function() {
     self.passSubmit = true;
     if (button) {
-      $(button).click();
+      $(button).attr('disabled', null).click().attr('disabled', true);
     }
     else {
       self.$form.submit();
@@ -116,6 +144,18 @@ Webform.prototype.ajaxSubmitFunction = function(options) {
     self.$form.ajaxSubmit(options);
     self.passSubmit = false;
   }
+};
+
+Webform.prototype.showProgress = function() {
+  this.buttons = this.$form.find('input[type=submit]:not(:disabled)');
+  this.buttons.attr('disabled', true);
+  this.progress_element = $('<div class="ajax-progress ajax-progress-throbber"><div class="throbber">&nbsp;</div></div>');
+  $(this.activeButton).after(this.progress_element);
+};
+
+Webform.prototype.removeProgress = function() {
+  this.progress_element.remove();
+  this.buttons.attr('disabled', null);
 }
 
 Drupal.behaviors.webform_paymethod_select = {
