@@ -19,7 +19,8 @@ form .payment-line-item-container.odd {
 }
 
 #form-builder .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-amount-option,
-form .payment-line-item-container .webform-paymethod-select-amount-option {
+form .payment-line-item-container .webform-paymethod-select-amount-option, #form-builder .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-quantity-option,
+form .payment-line-item-container .webform-paymethod-select-quantity-option {
   clear: both;
   float: none;
   margin-left: 2em;

@@ -258,6 +258,10 @@ class Component {
         $amount = str_replace(',', '.', $amount);
         $line_item->amount = (float) $amount;
       }
+      if ($line_item->quantity_source === 'component2') {
+        $quantity= $submission->valueByCid($line_item->quantity_component);
+        $line_item->quantity = (int) $quantity;
+      }
     }
     $values = $form_state['values']['submitted'][$this->component['cid']];
     $payment->method = entity_load_single('payment_method', $values['payment_method_selector']);

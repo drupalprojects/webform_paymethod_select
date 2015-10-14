@@ -52,14 +52,15 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         $defaults = new Drupal\webform_paymethod_select\PaymethodLineItem(array(
           'amount' => '',
           'amount_source' => 'fixed',
-          'quantity' => '',
+          'quantity' => 1,
           'quantity_source' => 'fixed',
           'tax_rate' => 0,
         ));
       }
 
-      if ($form_builder && is_numeric($defaults->amount_component)) {
+      if ($form_builder && is_numeric($defaults->amount_component) && is_numeric($defaults->quantity_component)) {
         $defaults->amount_component = 'cid_' . $defaults->amount_component;
+        $defaults->quantity_component = 'cid_' . $defaults->quantity_component;
       }
 
       $radio_id = drupal_html_id('webform-paymethod-select-' . $key . '-amount-source');
@@ -142,7 +143,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#required'      => FALSE,
         '#default_value' => $defaults->quantity,
         '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-amount-option'),
+          'class' => array('webform-paymethod-select-quantity-option'),
         ),
         '#states'        => array(
           'disabled' => array(".$radio_quantity" => array('value' => 'component2')),
@@ -150,7 +151,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#weight' => -4,
       );
       $line_element['component2'] = array(
-        '#attributes'    => array('class' => array($radio_id)),
+        '#attributes'    => array('class' => array($radio_quantity)),
         '#title'         => t('Select the component from which to read the quantity'),
         '#type'          => 'radio',
         '#return_value'  => 'component2',
@@ -161,21 +162,20 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
       );
       $line_element['quantity_component'] = array(
         '#type'          => 'select',
-        '#title'         => t('Component2'),
+        '#title'         => t('Component'),
         '#title_display' => 'invisible',
         '#default_value' => $defaults->quantity_component,
         '#options'       => $other_components,
         '#disabled'      => $components_disabled,
         '#required'      => FALSE,
         '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-amount-option'),
+          'class' => array('webform-paymethod-select-quantity-option'),
           ),
         '#states'        => array(
           'disabled' => array(".$radio_quantity" => array('value' => 'fixed')),
         ),
         '#weight' => -2,
       );
-      dpm($line_element);
     }
   }
 
@@ -194,18 +194,19 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
   $line_items = array();
 
   foreach ($values as $container => $data) {
+    dpm($data);
 
   // Skip empty line items
     if (empty($data['quantity']) && empty($data['tax_rate']) && empty($data['description'])) {
       continue;
     }
     if ($data['quantity_source'] == 'fixed') {
-    // They're not all empty, so make sure they all contain input.
+      // They're not all empty, so make sure they all contain input.
       if ((int) $data['quantity'] == $data['quantity'] && $data['quantity'] >= 0) {
-      $data['quantity'] = (int) $data['quantity'];
+        $data['quantity'] = (int) $data['quantity'];
       } else {
-      $elem = &$element[$container]['quantity'];
-      form_error($elem, t('Quantity needs to be a non-negative number.'));
+        $elem = &$element[$container]['quantity'];
+        form_error($elem, t('Quantity needs to be a non-negative number.'));
       }
       $data['quantity_component'] = NULL;
     } else {
@@ -240,9 +241,10 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
 
 
     // Convert the raw input to a PaymentLineItem object.
+    dpm($data);
     $line_items[] = new \Drupal\webform_paymethod_select\PaymethodLineItem($data);
   }
-
+dpm($line_items);
   form_set_value($element, $line_items, $form_state);
 }
 
