@@ -58,8 +58,10 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         ));
       }
 
-      if ($form_builder && is_numeric($defaults->amount_component) && is_numeric($defaults->quantity_component)) {
+      if ($form_builder && is_numeric($defaults->amount_component)) {
         $defaults->amount_component = 'cid_' . $defaults->amount_component;
+      }
+      if ($form_builder && is_numeric($defaults->quantity_component)) {
         $defaults->quantity_component = 'cid_' . $defaults->quantity_component;
       }
 
@@ -178,7 +180,6 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
       );
     }
   }
-
   return $element;
 }
 
@@ -194,7 +195,6 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
   $line_items = array();
 
   foreach ($values as $container => $data) {
-    dpm($data);
 
   // Skip empty line items
     if (empty($data['quantity']) && empty($data['tax_rate']) && empty($data['description'])) {
@@ -239,12 +239,9 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
       $data['amount'] = NULL;
     }
 
-
     // Convert the raw input to a PaymentLineItem object.
-    dpm($data);
     $line_items[] = new \Drupal\webform_paymethod_select\PaymethodLineItem($data);
   }
-dpm($line_items);
   form_set_value($element, $line_items, $form_state);
 }
 
