@@ -139,7 +139,7 @@ class Component {
     $form_elements_callback = $method->controller->payment_configuration_form_elements_callback;
     if (function_exists($form_elements_callback) == TRUE) {
       // $element is changed by reference.
-      $element += $form_elements_callback($element, $form_state, $payment);
+      $form_elements_callback($element, $form_state, $payment);
     }
     return $element;
   }
@@ -252,9 +252,15 @@ class Component {
     // Set the payment up for a (possibly repeated) payment attempt.
     // Handle setting the amount value in line items that were configured to
     // read their amount from a component.
-    foreach ($payment->line_items as $i => $line_item) {
-      if ($line_item instanceof PaymethodLineItem) {
-        $line_item->set_values($submission);
+    foreach ($payment->line_items as $line_item) {
+      if ($line_item->amount_source === 'component') {
+        $amount = $submission->valueByCid($line_item->amount_component);
+        $amount = str_replace(',', '.', $amount);
+        $line_item->amount = (float) $amount;
+      }
+      if ($line_item->quantity_source === 'component2') {
+        $quantity= $submission->valueByCid($line_item->quantity_component);
+        $line_item->quantity = (int) $quantity;
       }
     }
     $values = $form_state['values']['submitted'][$this->component['cid']];
