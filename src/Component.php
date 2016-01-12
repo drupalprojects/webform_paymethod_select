@@ -138,8 +138,7 @@ class Component {
 
     $form_elements_callback = $method->controller->payment_configuration_form_elements_callback;
     if (function_exists($form_elements_callback) == TRUE) {
-      // $element is changed by reference.
-      $form_elements_callback($element, $form_state, $payment);
+      $element += $form_elements_callback($element, $form_state, $payment);
     }
     return $element;
   }
