@@ -18,9 +18,9 @@ form .payment-line-item-container.odd {
     background-color: #F8F8F8;
 }
 
-#form-builder .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-amount-option,
-form .payment-line-item-container .webform-paymethod-select-amount-option, #form-builder .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-quantity-option,
-form .payment-line-item-container .webform-paymethod-select-quantity-option {
+#form-builder .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-component-or-number-option,
+form .payment-line-item-container .webform-component-or-number-option
+{
   clear: both;
   float: none;
   margin-left: 2em;

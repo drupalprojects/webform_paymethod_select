@@ -67,6 +67,112 @@ function webform_paymethod_select_theme() {
 }
 
 /**
+ * Implements hook_element_info().
+ */
+function webform_paymethod_select_element_info() {
+  $types['webform_component_or_number'] = [
+    '#input' => TRUE,
+    '#process' => [
+      'webform_paymethod_select_process_component_or_number',
+      'form_process_container',
+    ],
+    '#node' => NULL,
+    '#title_source_number' => t('Set to a fixed number'),
+    '#title_number' => t('Number'),
+    '#title_source_number' => t('Select the component from which to read the number'),
+    '#title_component' => t('Component'),
+    '#theme_wrappers' => ['container'],
+    '#component_type_blacklist' => ['paymethod_select'],
+    '#default_value' => [],
+  ];
+  return $types;
+}
+
+function webform_paymethod_select_process_component_or_number($element, &$form_state) {
+  $defaults = $element['#default_value'] + [
+    'source' => 'number',
+    'component' => NULL,
+    'number' => NULL,
+  ];
+  $node = $element['#node'];
+
+  $other_components = webform_component_list($node, FALSE);
+  foreach ($other_components as $cid => $component) {
+    $type = $node->webform['components'][$cid]['type'];
+    if (in_array($type, $element['#component_type_blacklist'])) {
+      unset($other_components[$cid]);
+    }
+  }
+  $components_disabled = empty($other_components);
+  if ($components_disabled) {
+    $other_components = ['' => t('No available components')];
+  }
+
+  $radio_id = drupal_html_id('webform-component-or-number-radio');
+  $parents = $element['#parents'];
+  $element['source_number'] = [
+    '#attributes' => ['class' => [$radio_id]],
+    '#title' => $element['#title_source_number'],
+    '#type' => 'radio',
+    '#return_value' => 'number',
+    '#default_value' => $defaults['source'] == 'number' ? 'number' : NULL,
+    '#parents' => array_merge($parents, ['source']),
+  ];
+  $element['number'] = [
+    '#type' => 'textfield',
+    '#title' => $element['#title_number'],
+    '#size' => '20',
+    '#maxlength' => '20',
+    '#default_value' => $defaults['number'],
+    '#wrapper_attributes' => [
+      'class' => ['webform-component-or-number-option'],
+    ],
+    '#states' => [
+      'disabled' => [".$radio_id" => ['value' => 'component']],
+    ],
+  ];
+  $element['source_component'] = [
+    '#attributes' => array('class' => array($radio_id)),
+    '#title' => $element['#title_source_component'],
+    '#type' => 'radio',
+    '#return_value' => 'component',
+    '#default_value' => $defaults['source'] == 'component' ? 'component' : NULL,
+    '#parents' => array_merge($parents, ['source']),
+  ];
+  $element['component'] = [
+    '#type' => 'select',
+    '#title' => $element['#title_component'],
+    '#title_display' => 'invisible',
+    '#default_value' => $defaults['component'],
+    '#options' => $other_components,
+    '#disabled' => $components_disabled,
+    '#wrapper_attributes' => [
+      'class' => ['webform-component-or-number-option'],
+    ],
+    '#states' => [
+      'disabled' => [".$radio_id" => ['value' => 'fixed']],
+    ],
+  ];
+  $element['#element_validate'][] = 'webform_paymethod_select_validate_component_or_number';
+  return $element;
+}
+
+function webform_paymethod_select_validate_component_or_number(array $element, array &$form_state) {
+  $values = &drupal_array_get_nested_value($form_state['values'], $element['#parents']);
+  if ($values['source'] == 'number') {
+    if (is_numeric($values['number']) && $values['number'] >= 0) {
+      $values['number'] = (float) $values['number'];
+    }
+    else {
+      $msg = t('@ must be a positive number or 0.', ['title' => $element['#title']]);
+      form_error($element['number'], $msg);
+    }
+  } else {
+    $values['number'] = NULL;
+  }
+}
+
+/**
  * Implements hook_webform_component_info().
  */
 function webform_paymethod_select_webform_component_info() {

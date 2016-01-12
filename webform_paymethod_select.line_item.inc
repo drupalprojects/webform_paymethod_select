@@ -49,134 +49,44 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         $defaults = $element['#default_value'][$index];
       }
       else {
-        $defaults = new Drupal\webform_paymethod_select\PaymethodLineItem(array(
-          'amount' => '',
-          'amount_source' => 'fixed',
-          'quantity' => 1,
-          'quantity_source' => 'fixed',
+        $defaults = new \Drupal\webform_paymethod_select\PaymethodLineItem(array(
+          'amount_config' => ['source' => 'number'],
+          'quantity_config' => ['source' => 'number', 'number' => 1],
           'tax_rate' => 0,
         ));
       }
 
-      if ($form_builder && is_numeric($defaults->amount_component)) {
-        $defaults->amount_component = 'cid_' . $defaults->amount_component;
+      if ($form_builder && is_numeric($defaults->amount['component'])) {
+        $defaults->amount['component'] = 'cid_' . $defaults->amount['component'];
       }
       if ($form_builder && is_numeric($defaults->quantity_component)) {
-        $defaults->quantity_component = 'cid_' . $defaults->quantity_component;
+        $defaults->quantity['component'] = 'cid_' . $defaults->quantity['component'];
       }
 
-      $radio_id = drupal_html_id('webform-paymethod-select-' . $key . '-amount-source');
-      $line_element['amount_source'] = array(
-        '#attributes'    => array('class' => array($radio_id)),
-        '#title'         => t('Set fixed amount'),
-        '#type'          => 'radio',
-        '#return_value'  => 'fixed',
-        '#default_value' => $defaults->amount_source == 'fixed' ? 'fixed' : NULL,
-        '#required'      => FALSE,
-        '#parents'       => array_merge($parents, array($key, 'amount_source')),
-        '#weight' => -9,
-      );
-
-      $line_element['amount'] = array(
-        '#type'          => 'textfield',
-        '#title'         => t('Amount'),
-        '#size'          => '20',
-        '#maxlength'     => '20',
-        '#required'      => FALSE,
-        '#default_value' => $defaults->amount,
-        '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-amount-option'),
-        ),
-        '#states'        => array(
-          'disabled' => array(".$radio_id" => array('value' => 'component')),
-        ),
-        '#weight' => -8,
-      );
-
-      $line_element['component'] = array(
-        '#attributes'    => array('class' => array($radio_id)),
-        '#title'         => t('Select the component from which to read the amount'),
-        '#type'          => 'radio',
-        '#return_value'  => 'component',
-        '#default_value' => $defaults->amount_source == 'component' ? 'component' : NULL,
-        '#required'      => FALSE,
-        '#parents'       => array_merge($parents, array($key, 'amount_source')),
-        '#weight' => -7,
-      );
-
-      $line_element['amount_component'] = array(
-        '#type'          => 'select',
-        '#title'         => t('Component'),
-        '#title_display' => 'invisible',
-        '#default_value' => $defaults->amount_component,
-        '#options'       => $other_components,
-        '#disabled'      => $components_disabled,
-        '#required'      => FALSE,
-        '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-amount-option'),
-          ),
-        '#states'        => array(
-          'disabled' => array(".$radio_id" => array('value' => 'fixed')),
-        ),
+      $line_element['amount_config'] = [
+        '#type' => 'webform_component_or_number',
+        '#node' => $node,
+        '#title_source_number' => t('Set fixed amount'),
+        '#title_number' => t('Amount'),
+        '#title_source_component' => t('Select the component from which to read the amount'),
         '#weight' => -6,
-      );
+        '#default_value' => $defaults->amount_config,
+      ];
+
+      $line_element['quantity_config'] = [
+        '#type' => 'webform_component_or_number',
+        '#node' => $node,
+        '#title_source_number' => t('Set fixed quantity'),
+        '#title_number' => t('Amount'),
+        '#title_source_component' => t('Select the component from which to read the quantity'),
+        '#weight' => -5,
+        '#default_value' => $defaults->quantity_config,
+      ];
+      unset($line_element['amount']);
+      unset($line_element['quantity']);
 
       $line_element['description']['#wrapper_attributes'] = array(
         'class' => array('webform-paymethod-select-line-item-description'),
-      );
-
-      $radio_quantity = drupal_html_id('webform-paymethod-select-' . $key . '-quantity_source');
-      $line_element['quantity_source'] = array(
-        '#attributes'    => array('class' => array($radio_quantity)),
-        '#title'         => t('Set fixed quantity'),
-        '#type'          => 'radio',
-        '#return_value'  => 'fixed',
-        '#default_value' => $defaults->quantity_source == 'fixed' ? 'fixed' : NULL,
-        '#required'      => FALSE,
-        '#parents'       => array_merge($parents, array($key, 'quantity_source')),
-        '#weight' => -5,
-      );
-
-      $line_element['quantity'] = array(
-        '#type'          => 'textfield',
-        '#title'         => t('Quantity'),
-        '#size'          => '20',
-        '#maxlength'     => '20',
-        '#required'      => FALSE,
-        '#default_value' => $defaults->quantity,
-        '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-quantity-option'),
-        ),
-        '#states'        => array(
-          'disabled' => array(".$radio_quantity" => array('value' => 'component2')),
-        ),
-        '#weight' => -4,
-      );
-      $line_element['component2'] = array(
-        '#attributes'    => array('class' => array($radio_quantity)),
-        '#title'         => t('Select the component from which to read the quantity'),
-        '#type'          => 'radio',
-        '#return_value'  => 'component2',
-        '#default_value' => $defaults->quantity_source == 'component2' ? 'component2' : NULL,
-        '#required'      => FALSE,
-        '#parents'       => array_merge($parents, array($key, 'quantity_source')),
-        '#weight' => -3,
-      );
-      $line_element['quantity_component'] = array(
-        '#type'          => 'select',
-        '#title'         => t('Component'),
-        '#title_display' => 'invisible',
-        '#default_value' => $defaults->quantity_component,
-        '#options'       => $other_components,
-        '#disabled'      => $components_disabled,
-        '#required'      => FALSE,
-        '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-quantity-option'),
-          ),
-        '#states'        => array(
-          'disabled' => array(".$radio_quantity" => array('value' => 'fixed')),
-        ),
-        '#weight' => -2,
       );
     }
   }
@@ -200,20 +110,7 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
     if (empty($data['quantity']) && empty($data['tax_rate']) && empty($data['description'])) {
       continue;
     }
-    if ($data['quantity_source'] == 'fixed') {
-      // They're not all empty, so make sure they all contain input.
-      if ((int) $data['quantity'] == $data['quantity'] && $data['quantity'] >= 0) {
-        $data['quantity'] = (int) $data['quantity'];
-      } else {
-        $elem = &$element[$container]['quantity'];
-        form_error($elem, t('Quantity needs to be a non-negative number.'));
-      }
-      $data['quantity_component'] = NULL;
-    } else {
-      $data['quantity'] = NULL;
-     }
-
-   if (is_numeric($data['tax_rate']) || $data['tax_rate'] >= 0) {
+    if (is_numeric($data['tax_rate']) || $data['tax_rate'] >= 0) {
       $data['tax_rate'] = (float) $data['tax_rate'] / 100;
     }
     else {
@@ -224,19 +121,6 @@ function webform_paymethod_select_element_validate_line_item(array $element, arr
     if (empty($data['description'])) {
       $elem = &$element[$container]['description'];
       form_error($elem, t('The line item description must not be empty.'));
-    }
-
-    if ($data['amount_source'] == 'fixed') {
-      if (is_numeric($data['amount']) && $data['amount'] >= 0) {
-        $data['amount'] = (float) $data['amount'];
-      }
-      else {
-        $elem = &$element[$container]['amount'];
-        form_error($elem, 'Amount must be a positive number or 0.');
-      }
-      $data['amount_component'] = NULL;
-    } else {
-      $data['amount'] = NULL;
     }
 
     // Convert the raw input to a PaymentLineItem object.
