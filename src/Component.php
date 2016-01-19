@@ -138,7 +138,8 @@ class Component {
 
     $form_elements_callback = $method->controller->payment_configuration_form_elements_callback;
     if (function_exists($form_elements_callback) == TRUE) {
-      $element += $form_elements_callback($element, $form_state, $payment);
+      $form_state['payment'] = $payment;
+      $element += $form_elements_callback($element, $form_state);
     }
     return $element;
   }
@@ -238,7 +239,8 @@ class Component {
     $method_validate_callback = $method->controller->payment_configuration_form_elements_callback . '_validate';
     if (function_exists($method_validate_callback)) {
       $method_element = &$element['payment_method_all_forms'][$pmid];
-      $method_validate_callback($method_element, $form_state, $payment);
+      $form_state['payment'] = $payment;
+      $method_validate_callback($method_element, $form_state);
     }
   }
 
