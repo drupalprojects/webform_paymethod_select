@@ -140,6 +140,7 @@ class Component {
     if (function_exists($form_elements_callback) == TRUE) {
       $form_state['payment'] = $payment;
       $element += $form_elements_callback($element, $form_state);
+      unset($form_state['payment']);
     }
     return $element;
   }
@@ -241,6 +242,7 @@ class Component {
       $method_element = &$element['payment_method_all_forms'][$pmid];
       $form_state['payment'] = $payment;
       $method_validate_callback($method_element, $form_state);
+      unset($form_state['payment']);
     }
   }
 
