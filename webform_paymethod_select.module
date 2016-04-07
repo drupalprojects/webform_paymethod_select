@@ -323,7 +323,7 @@ function webform_paymethod_select_form_form_builder_field_configure_alter(&$form
         array_unshift($felements, $felem[$key]);
       }
       if (!empty($felem['#form_builder']['element_id']) && $felem['#form_builder']['element_id'] != $element['#form_builder']['element_id']) {
-        $other_components[$felem['#form_builder']['element_id']] = str_repeat('-', $felem['#depth']) . ' ' . $felem['#title'];
+        $other_components[$felem['#form_builder']['element_id']] = str_repeat('-', $felem['#depth']) . ' ' . $felem['#webform_component']['name'];
       }
     }
   }
