@@ -361,6 +361,15 @@ function webform_paymethod_select_node_presave($node) {
           $item->amount_component = $element['#webform_component']['cid'];
         }
       }
+      if (!empty($item->quantity_component) && !is_numeric($item->quantity_component)) {
+        if (strpos($item->quantity_component, 'cid_') === 0) {
+          $item->quantity_component = (int) substr($item->quantity_component, 4);
+        }
+        elseif (strpos($item->quantity_component, 'new_') === 0) {
+          $element = form_builder_get_element($cache, $item->quantity_component);
+          $item->quantity_component = $element['#webform_component']['cid'];
+        }
+      }
     }
   }
 }
