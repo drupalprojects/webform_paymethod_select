@@ -398,23 +398,27 @@ function webform_paymethod_select_webform_submission_load(&$submissions) {
   $cids = array();
   $pids = array();
 
+  $webforms = array();
+
   // Create a list of all stored pids mapped to submissions and cids.
   foreach ($submissions as $sid => $submission) {
     $nid = $submission->nid;
+    if (!isset($webforms[$nid])) {
+      $webforms[$nid] = new Webform(node_load($nid));
+    }
+    $webform = $webforms[$nid];
     if (!isset($cids[$nid])) {
-      $webform = new Webform(node_load($nid));
       $cids[$nid] = array_keys($webform->componentsByType('paymethod_select'));
     }
     elseif (!$cids[$nid]) {
       continue;
     }
+    $submission_obj = new Submission($webform, $submission);
 
     $submission->payments = array();
-
     foreach ($cids[$nid] as $cid) {
       $submission->payments[$cid] = NULL;
-      if (isset($submission->data[$cid]) && !empty($submission->data[$cid]['value'])) {
-        $maybe_pid = $submission->data[$cid]['value'][0];
+      if ($maybe_pid = $submission_obj->valueByCid($cid)) {
         if (($pid = (int) $maybe_pid) == $maybe_pid) {
           if (!isset($pids[$pid])) {
             $pids[$pid] = array();
@@ -462,7 +466,13 @@ function webform_paymethod_select_implements_data_interface($object) {
 /**
  * Implements hook_webform_results_download_submission_information_info().
  */
-function webform_paymethod_select_webform_results_download_submission_information_info($node, $options) {
+function webform_paymethod_select_webform_results_download_submission_information_info($node = NULL, $options = NULL) {
+  if (!$node) {
+    // Our implementation needs a patch from #2117285.
+    // We can't output anything in the results if it is not applied and $node
+    // is not passed.
+    return [];
+  }
   $webform = new Webform($node);
   $info = array();
   $components = $webform->componentsByType('paymethod_select');
