@@ -9,6 +9,7 @@ use \Drupal\webform_paymethod_select\Component;
 use \Drupal\little_helpers\Webform\Submission;
 use \Drupal\little_helpers\Webform\FormState;
 use \Drupal\little_helpers\Webform\Webform;
+use \FormBuilderLoader as FBLoader;
 
 if (module_exists('form_builder_webform') == TRUE) {
   require_once dirname(__FILE__) . '/webform_paymethod_select.form_builder.inc';
@@ -310,23 +311,17 @@ function webform_paymethod_select_form_form_builder_field_configure_alter(&$form
 
   $element = &$form['#_edit_element'];
   $build_info = &$form_state['build_info'];
-  $other_components = NULL;
-  if ($build_info['form_id'] == 'form_builder_field_configure') {
-    $cache = form_builder_cache_load($build_info['args'][0], $build_info['args'][1]);
-    $cache['#depth'] = -1;
-    $felements[] = &$cache;
-    $other_components = array();
-    while (!empty($felements)) {
-      $felem = array_shift($felements);
-      foreach (array_reverse(element_children($felem, TRUE)) as $key) {
-        $felem[$key]['#depth'] = $felem['#depth'] + 1;
-        array_unshift($felements, $felem[$key]);
-      }
-      if (!empty($felem['#form_builder']['element_id']) && $felem['#form_builder']['element_id'] != $element['#form_builder']['element_id']) {
-        $other_components[$felem['#form_builder']['element_id']] = str_repeat('-', $felem['#depth']) . ' ' . $felem['#webform_component']['name'];
-      }
+  $nid = $build_info['args'][1];
+  $fb_form = FBLoader::instance()->fromCache($build_info['args'][0], $build_info['args'][1]);
+  $components = $fb_form->getComponents(node_load($nid));
+  $other_components = [];
+  foreach ($components as $cid => $component) {
+    if (in_array($component['type'], ['pagebreak', 'fieldset'])) {
+      continue;
     }
+    $other_components[$component['form_builder_element_id']] = $component['name'];
   }
+  unset($other_components[$element['#form_builder']['element_id']]);
   $form_state['payment_line_item_other_components'] = $other_components;
 }
 
