@@ -126,7 +126,7 @@ function _webform_render_paymethod_select($component, $value = NULL, $filter = T
     '#currency_code' => $component['extra']['currency_code'],
     '#line_items' => array('items' => $component['extra']['line_items']),
     '#payment_description' => $component['extra']['payment_description'],
-    '#value' => $value ? $value[0] : NULL,
+    '#value' => $value,
   );
 
   return $element;

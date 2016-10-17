@@ -147,6 +147,13 @@ class Component {
 
   /** 
    * Render the webform component.
+   *
+   * The element array includes the data put there by
+   * @see _webform_render_paymethod_select(). Especially:
+   * - #value: The previous value for this submission. The format of the data
+   *   provided depends on where it came from:
+   *   - From a previous submission: [0 => $payment->pid].
+   *   - From navigating the webform steps: $form_state['values'][…].
    */
   public function render(&$element, &$form, &$form_state) {
     $context = new WebformPaymentContext(new FormState($form['#node'], $form, $form_state), $form_state, $this->component);
@@ -158,10 +165,16 @@ class Component {
     }
 
     unset($element['#theme']);
-    if (!empty($element['#value']) && is_numeric($element['#value'])) {
-      if (!$this->payment->pid || $this->payment->pid != $element['#value']) {
-        $this->reloadPayment($element['#value']);
+    reset($pmid_options);
+    $pmid_default = key($pmid_options);
+    if (isset($element['#value'][0]) && is_numeric($element['#value'][0])) {
+      if (!$this->payment->pid || $this->payment->pid != $element['#value'][0]) {
+        $this->reloadPayment($element['#value'][0]);
+        $pmid_default = $this->payment->method->pmid;
       }
+    }
+    elseif (!empty($element['#value']['payment_method_selector'])) {
+      $pmid_default = $element['#value']['payment_method_selector'];
     }
     if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)){
       $element['#theme'] = 'webform_paymethod_select_already_paid';
@@ -204,9 +217,6 @@ class Component {
       );
     }
     else {
-      reset($pmid_options);
-      $pmid_default = isset($this->payment->method) ? $this->payment->method->pmid : key($pmid_options);
-
       $this->payment->contextObj = $context;
       foreach ($pmid_options as $pmid => $method_name) {
         $element['payment_method_all_forms'][$pmid] = $this->methodForm($methods[$pmid], $form_state);
