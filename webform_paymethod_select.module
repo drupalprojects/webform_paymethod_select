@@ -235,12 +235,8 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
       unset($form_state['save_draft']);
       // Display the same step again instead of another one.
       // Completely repopulate the $form_state['storage'] if needed.
-      if (!isset($form_state['storage'])) {
-        $form_state['storage']['component_tree'] = $form_state['webform']['component_tree'];
-        $form_state['storage']['page_count'] = $form_state['webform']['page_count'];
-        $form_state['storage']['preview'] = !empty($form_state['webform']['preview']);
-      }
-      $form_state['storage']['page_num'] = $page_num;
+      $form_state += ['storage' => []];
+      $form_state['storage'] += $form_state['webform'];
 
       // Redirect instead of rebuild if all non-success-components are pending.
       if ($pending) {
