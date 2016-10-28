@@ -103,8 +103,8 @@ function _webform_edit_paymethod_select($component) {
   );
 
   $form['extra']['currency_code'] = array(
-    '#title'         => t('Select a currency code'),
-    '#description'   => t('Select the currency code for this payment.'),
+    '#title'         => t('Select a currency'),
+    '#description'   => t('Select the currency for this payment.'),
     '#type'          => 'select',
     '#multiple'      => FALSE,
     '#options'       => _webform_paymethod_select_currency_options(),
@@ -127,6 +127,43 @@ function _webform_edit_paymethod_select($component) {
   );
 
   return $form;
+}
+
+/**
+ * Generate a component select form element for selecting other components.
+ *
+ * @return array
+ *   Form-API select element.
+ */
+function _webform_paymethod_select_other_component_selector($form, &$form_state) {
+  module_load_include('inc', 'webform', 'includes/webform.components');
+
+  if (isset($form_state['webform_paymethod_select_other_components'])) {
+    $other_components = $form_state['webform_paymethod_select_other_components'];
+  }
+  else {
+    $node = webform_paymethod_select_get_node($form, $form_state);
+    $other_components = webform_component_list($node, FALSE);
+    foreach ($other_components as $cid => $component) {
+      if ($node->webform['components'][$cid]['type'] == 'paymethod_select') {
+        unset($other_components[$cid]);
+      }
+    }
+    $form_state['webform_paymethod_select_other_components'] = $other_components;
+  }
+
+  $components_disabled = empty($other_components);
+  if ($components_disabled) {
+    $other_components = array('' => t('No available components'));
+  }
+
+  return array(
+    '#type' => 'select',
+    '#title' => t('Component'),
+    '#title_display' => 'invisible',
+    '#options' => $other_components,
+    '#disabled' => $components_disabled,
+  );
 }
 
 /**

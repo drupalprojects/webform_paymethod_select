@@ -17,26 +17,6 @@ function webform_paymethod_select_element_info_alter(&$element) {
  * Callback function set in hook_element_info_alter() hook
  */
 function webform_paymethod_select_element_process_line_item(array $element, array &$form_state, array $form) {
-  module_load_include('inc', 'webform', 'includes/webform.components');
-  $node                   = webform_paymethod_select_get_node($form, $form_state);
-
-  $form_builder = isset($form_state['payment_line_item_other_components']);
-  if ($form_builder) {
-    $other_components = $form_state['payment_line_item_other_components'];
-  }
-  else {
-    $other_components = webform_component_list($node, FALSE);
-    foreach ($other_components as $cid => $component) {
-      if ($node->webform['components'][$cid]['type'] == 'paymethod_select') {
-        unset($other_components[$cid]);
-      }
-    }
-  }
-  $components_disabled = empty($other_components);
-  if ($components_disabled) {
-    $other_components = array('' => t('No available components'));
-  }
-
   $parents = isset($element['#parents']) ? $element['#parents'] : array('extra', 'line_items', 'items');
 
   foreach($element as $key => &$line_element) {
@@ -58,6 +38,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         ));
       }
 
+      $form_builder = isset($form_state['webform_paymethod_select_other_components']);
       if ($form_builder && is_numeric($defaults->amount_component)) {
         $defaults->amount_component = 'cid_' . $defaults->amount_component;
       }
@@ -105,12 +86,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
       );
 
       $line_element['amount_component'] = array(
-        '#type'          => 'select',
-        '#title'         => t('Component'),
-        '#title_display' => 'invisible',
         '#default_value' => $defaults->amount_component,
-        '#options'       => $other_components,
-        '#disabled'      => $components_disabled,
         '#required'      => FALSE,
         '#wrapper_attributes' => array(
           'class' => array('webform-paymethod-select-amount-option'),
@@ -119,7 +95,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
           'disabled' => array(".$radio_id" => array('value' => 'fixed')),
         ),
         '#weight' => -6,
-      );
+      ) + _webform_paymethod_select_other_component_selector($form, $form_state);
 
       $line_element['description']['#wrapper_attributes'] = array(
         'class' => array('webform-paymethod-select-line-item-description'),
@@ -163,12 +139,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#weight' => -3,
       );
       $line_element['quantity_component'] = array(
-        '#type'          => 'select',
-        '#title'         => t('Component'),
-        '#title_display' => 'invisible',
         '#default_value' => $defaults->quantity_component,
-        '#options'       => $other_components,
-        '#disabled'      => $components_disabled,
         '#required'      => FALSE,
         '#wrapper_attributes' => array(
           'class' => array('webform-paymethod-select-quantity-option'),
@@ -177,7 +148,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
           'disabled' => array(".$radio_quantity" => array('value' => 'fixed')),
         ),
         '#weight' => -2,
-      );
+      ) + _webform_paymethod_select_other_component_selector($form, $form_state);
     }
   }
   return $element;
