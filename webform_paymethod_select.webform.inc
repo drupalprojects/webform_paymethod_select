@@ -47,6 +47,27 @@ function _webform_paymethod_select_payment_method_options() {
   return $payment_method_options;
 }
 
+
+/**
+ * Generate a list of currencies for use in a select form element.
+ *
+ * @return array
+ *   Array of currencies keyed by their ISO-code.
+ */
+function _webform_paymethod_select_currency_options() {
+  ctools_include('export');
+  $options = array();
+  foreach (currency_load_all() as $currency) {
+    $options[$currency->ISO4217Code] = t('@currency_code - @currency_title', array(
+      '@currency_title' => $currency->translateTitle(),
+      '@currency_code' => $currency->ISO4217Code,
+    ));
+  }
+  natcasesort($options);
+  return $options;
+}
+
+
 /**
  * Implements _webform_edit_[component]().
  */
@@ -81,16 +102,12 @@ function _webform_edit_paymethod_select($component) {
     '#default_value' => $settings['selected_payment_methods'],
   );
 
-  $node = node_load($component['nid']);
-
-  require dirname(__FILE__) . '/currency_codes.inc.php';
-
   $form['extra']['currency_code'] = array(
     '#title'         => t('Select a currency code'),
     '#description'   => t('Select the currency code for this payment.'),
     '#type'          => 'select',
     '#multiple'      => FALSE,
-    '#options'       => $currency_codes,
+    '#options'       => _webform_paymethod_select_currency_options(),
     '#default_value' => $settings['currency_code'],
   );
 
