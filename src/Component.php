@@ -269,6 +269,10 @@ class Component {
     $payment = $this->payment;
     $submission = $payment->contextObj->getSubmission();
 
+    if ($this->component['extra']['currency_code_source'] == 'component') {
+      $payment->currency_code = $submission->valueByCid($this->component['extra']['currency_code_component']);
+    }
+
     // Set the payment up for a (possibly repeated) payment attempt.
     // Handle setting the amount value in line items that were configured to
     // read their amount from a component.
