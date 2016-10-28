@@ -78,20 +78,21 @@ function _webform_edit_paymethod_select($component) {
       'payment_description'      => 'Default Payment',
       'selected_payment_methods' => array(),
       'currency_code'            => 'EUR',
+      'currency_code_source'     => 'fixed',
+      'currency_code_component'  => NULL,
       'line_items'               => NULL,
     ),
     $component['extra']
   );
 
-  $form = array(
-    'extra' => array(
-      'payment_description' => array(
-        '#type'          => 'textfield',
-        '#title'         => t('Payment Description'),
-        '#default_value' => $component['extra']['payment_description'],
-        '#required'      => TRUE,
-      )
-    )
+  $form['extra'] = array(
+    'payment_description' => array(
+      '#type' => 'textfield',
+      '#title' => t('Payment Description'),
+      '#default_value' => $component['extra']['payment_description'],
+      '#required' => TRUE,
+    ),
+    '#element_validate' => array('_webform_paymethod_select_currency_values'),
   );
 
   $form['extra']['selected_payment_methods'] = array(
@@ -103,13 +104,44 @@ function _webform_edit_paymethod_select($component) {
   );
 
   $form['extra']['currency_code'] = array(
-    '#title'         => t('Select a currency'),
+    '#type' => 'container',
+  );
+
+  $radio_id = drupal_html_id('webform-paymethod-select-currency');
+  $form['extra']['currency_code']['source'] = array(
+    '#title' => t('Currency'),
+    '#attributes' => array('class' => array($radio_id)),
+    '#type' => 'radios',
+    '#options' => array(
+      'fixed' => t('Use a fixed currency.'),
+      'component' => t('Read the currency from another form element.'),
+    ),
+    '#default_value' => $settings['currency_code_source'],
+  );
+
+  $form['extra']['currency_code']['value'] = array(
     '#description'   => t('Select the currency for this payment.'),
     '#type'          => 'select',
-    '#multiple'      => FALSE,
     '#options'       => _webform_paymethod_select_currency_options(),
     '#default_value' => $settings['currency_code'],
+    '#states'        => array(
+      'visible' => array(".$radio_id" => array('value' => 'fixed')),
+    ),
+    '#wrapper_attributes' => array(
+      'class' => array('webform-paymethod-select-component-or-value-option'),
+    ),
   );
+
+  $fs = array();
+  $form['extra']['currency_code']['component'] = array(
+    '#default_value' => $settings['currency_code_component'],
+    '#states' => array(
+      'visible' => array(".$radio_id" => array('value' => 'component')),
+    ),
+    '#wrapper_attributes' => array(
+      'class' => array('webform-paymethod-select-component-or-value-option'),
+    ),
+  ) + _webform_paymethod_select_other_component_selector($form, $fs);
 
   $form['extra']['line_items'] = array(
     '#type' => 'fieldset',
@@ -128,6 +160,20 @@ function _webform_edit_paymethod_select($component) {
 
   return $form;
 }
+
+/**
+ * Element validate function for the component or value currency config.
+ */
+function _webform_paymethod_select_currency_values($element, &$form_state, $form) {
+  $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
+
+  $values['currency_code_source'] = $values['currency_code']['source'];
+  $values['currency_code_component'] = $values['currency_code']['component'];
+  $values['currency_code'] = $values['currency_code']['value'];
+
+  form_set_value($element, $values, $form_state);
+}
+
 
 /**
  * Generate a component select form element for selecting other components.

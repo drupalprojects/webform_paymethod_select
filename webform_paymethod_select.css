@@ -18,12 +18,16 @@ form .payment-line-item-container.odd {
     background-color: #F8F8F8;
 }
 
-#form-builder .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-amount-option,
-form .payment-line-item-container .webform-paymethod-select-amount-option, #form-builder .form-builder-wrapper fieldset.form-builder-group .payment-line-item-container .webform-paymethod-select-quantity-option,
-form .payment-line-item-container .webform-paymethod-select-quantity-option {
+.webform-paymethod-select-component-or-value-option,
+.payment-line-item-container .form-item.webform-paymethod-select-component-or-value-option {
   clear: both;
   float: none;
   margin-left: 2em;
+}
+
+.webform-paymethod-select-currency .form-item {
+  float: left;
+  margin-right: 1em;
 }
 
 #form-builder .form-builder-wrapper .form-builder-group .payment-line-item-container .webform-paymethod-select-line-item-description,

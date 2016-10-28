@@ -53,8 +53,8 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
 
       $line_element['amount']['source'] = array(
         '#title' => t('Amount'),
-        '#attributes'    => array('class' => array($radio_id)),
-        '#type'          => 'radios',
+        '#attributes' => array('class' => array($radio_id)),
+        '#type' => 'radios',
         '#options' => array(
           'fixed' => t('Set fixed amount'),
           'component' => t('Read the amount from another form element.'),
@@ -70,7 +70,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#required'      => FALSE,
         '#default_value' => $defaults->amount,
         '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-amount-option'),
+          'class' => array('webform-paymethod-select-component-or-value-option'),
         ),
         '#states'        => array(
           'visible' => array(".$radio_id" => array('value' => 'fixed')),
@@ -82,7 +82,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#default_value' => $defaults->amount_component,
         '#required'      => FALSE,
         '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-amount-option'),
+          'class' => array('webform-paymethod-select-component-or-value-option'),
           ),
         '#states'        => array(
           'visible' => array(".$radio_id" => array('value' => 'component')),
@@ -117,7 +117,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#required'      => FALSE,
         '#default_value' => $defaults->quantity,
         '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-quantity-option'),
+          'class' => array('webform-paymethod-select-component-or-value-option'),
         ),
         '#states'        => array(
           'visible' => array(".$radio_quantity" => array('value' => 'fixed')),
@@ -128,7 +128,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#default_value' => $defaults->quantity_component,
         '#required'      => FALSE,
         '#wrapper_attributes' => array(
-          'class' => array('webform-paymethod-select-quantity-option'),
+          'class' => array('webform-paymethod-select-component-or-value-option'),
           ),
         '#states'        => array(
           'visible' => array(".$radio_quantity" => array('value' => 'component')),
