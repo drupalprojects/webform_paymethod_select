@@ -34,10 +34,6 @@ class Component {
       'description'     => $config['payment_description'],
       'finish_callback' => 'webform_paymethod_select_payment_finish',
     ));
-
-    foreach ($config['line_items'] as $line_item) {
-      $this->payment->setLineItem($line_item);
-    }
     $this->payment->contextObj = $context;
     $this->refreshPaymentFromContext();
     return $this->payment;
@@ -51,9 +47,6 @@ class Component {
    */
   protected function reloadPayment($pid, $context) {
     $this->payment = entity_load_single('payment', $pid);
-    foreach ($this->component['extra']['line_items'] as $i => $line_item) {
-      $this->payment->setLineItem($line_item);
-    }
     $this->payment->contextObj = $context;
     $this->refreshPaymentFromContext();
     return $this->payment;
@@ -269,14 +262,15 @@ class Component {
     $payment = $this->payment;
     $submission = $payment->contextObj->getSubmission();
 
-    if ($this->component['extra']['currency_code_source'] == 'component') {
-      $payment->currency_code = $submission->valueByCid($this->component['extra']['currency_code_component']);
+    $extra = $this->component['extra'];
+    if ($extra['currency_code_source'] == 'component') {
+      $payment->currency_code = $submission->valueByCid($extra['currency_code_component']);
     }
 
     // Set the payment up for a (possibly repeated) payment attempt.
     // Handle setting the amount value in line items that were configured to
     // read their amount from a component.
-    foreach ($payment->line_items as $line_item) {
+    foreach ($extra['line_items'] as $i => $line_item) {
       if ($line_item->amount_source === 'component') {
         $amount = $submission->valueByCid($line_item->amount_component);
         $amount = str_replace(',', '.', $amount);
@@ -286,6 +280,7 @@ class Component {
         $quantity= $submission->valueByCid($line_item->quantity_component);
         $line_item->quantity = (int) $quantity;
       }
+      $payment->setLineItem($line_item);
     }
   }
 
