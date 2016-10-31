@@ -49,6 +49,7 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
       $radio_id = drupal_html_id('webform-paymethod-select-' . $key . '-amount-source');
       $line_element['amount'] = array(
         '#type' => 'container',
+        '#weight' => -9,
       );
 
       $line_element['amount']['source'] = array(
@@ -60,7 +61,6 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
           'component' => t('Read the amount from another form element.'),
         ),
         '#default_value' => $defaults->amount_source,
-        '#weight' => -9,
       );
 
       $line_element['amount']['value'] = array(
@@ -75,7 +75,6 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#states'        => array(
           'visible' => array(".$radio_id" => array('value' => 'fixed')),
         ),
-        '#weight' => -8,
       );
 
       $line_element['amount']['component'] = array(
@@ -87,16 +86,16 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#states'        => array(
           'visible' => array(".$radio_id" => array('value' => 'component')),
         ),
-        '#weight' => -6,
       ) + _webform_paymethod_select_other_component_selector($form, $form_state);
 
-      $line_element['description']['#wrapper_attributes'] = array(
-        'class' => array('webform-paymethod-select-line-item-description'),
+      $line_element['tax_rate']['#wrapper_attributes'] = array(
+        'class' => array('webform-paymethod-select-line-item-tax-rate'),
       );
 
       $radio_quantity = drupal_html_id('webform-paymethod-select-' . $key . '-quantity_source');
       $line_element['quantity'] = array(
         '#type' => 'container',
+        '#weight' => -8,
       );
       $line_element['quantity']['source'] = array(
         '#title' => t('Quantity'),
@@ -107,7 +106,6 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
           'component' => t('Get quantity from another form element'),
         ),
         '#default_value' => $defaults->quantity_source,
-        '#weight' => -5,
       );
 
       $line_element['quantity']['value'] = array(
@@ -122,7 +120,6 @@ function webform_paymethod_select_element_process_line_item(array $element, arra
         '#states'        => array(
           'visible' => array(".$radio_quantity" => array('value' => 'fixed')),
         ),
-        '#weight' => -4,
       );
       $line_element['quantity']['component'] = array(
         '#default_value' => $defaults->quantity_component,

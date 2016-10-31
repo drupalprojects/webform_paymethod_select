@@ -30,8 +30,8 @@ form .payment-line-item-container.odd {
   margin-right: 1em;
 }
 
-#form-builder .form-builder-wrapper .form-builder-group .payment-line-item-container .webform-paymethod-select-line-item-description,
-form .payment-line-item-container .webform-paymethod-select-line-item-description {
+#form-builder .form-builder-wrapper .form-builder-group .payment-line-item-container .webform-paymethod-select-line-item-tax-rate,
+form .payment-line-item-container .webform-paymethod-select-line-item-tax-rate {
   float: none;
   clear: both;
   display: block;
