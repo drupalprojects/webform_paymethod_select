@@ -10,7 +10,9 @@ class Component {
   protected $component;
   protected $payment = NULL;
   public function __construct(array $component) {
-    $this->component = $component;
+    $defaults = _webform_defaults_paymethod_select();
+    $this->component = $component + $defaults;
+    $this->component['extra'] += $defaults['extra'];
   }
 
   /**
@@ -263,7 +265,7 @@ class Component {
     $submission = $payment->contextObj->getSubmission();
 
     $extra = $this->component['extra'];
-    if ($extra['currency_code_source'] == 'component') {
+    if ($extra['currency_code_source'] === 'component') {
       $payment->currency_code = $submission->valueByCid($extra['currency_code_component']);
     }
 

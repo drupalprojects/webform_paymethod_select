@@ -8,18 +8,20 @@
  */
 function _webform_defaults_paymethod_select() {
   $element = array(
-    'name'      => 'Payment Method Selector',
-    'form_key'  => NULL,
+    'name' => 'Payment Method Selector',
+    'form_key' => NULL,
     'mandatory' => 1,
-    'value'     => '',
-    'pid'       => 0,
-    'weight'    => 0,
+    'value' => '',
+    'pid' => 0,
+    'weight' => 0,
     'extra' => array(
-      'payment_description'      => 'Default Payment',
+      'payment_description' => 'Default Payment',
       'selected_payment_methods' => array(),
-      'line_items'               => array(),
-      'currency_code'            => 'EUR',
-      'private'                  => FALSE,
+      'line_items' => array(),
+      'currency_code' => 'EUR',
+      'currency_code_source' => 'fixed',
+      'currency_code_component' => NULL,
+      'private' => FALSE,
     ),
   );
 
