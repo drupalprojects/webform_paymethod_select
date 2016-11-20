@@ -2,10 +2,9 @@
 
 namespace Drupal\wps_test_method;
 
-use \Drupal\payment_forms\FormInterface;
+class DummyForm implements \Drupal\payment_forms\PaymentFormInterface {
 
-class DummyForm implements FormInterface {
-  public function getForm(array &$element, array &$form_state, \Payment $payment) {
+  public function form(array &$element, array &$form_state, \Payment $payment) {
     $method = $payment->method;
     $settings['wps_test_method'][$method->pmid] = true;
     drupal_add_js($settings, 'setting');
@@ -52,7 +51,7 @@ class DummyForm implements FormInterface {
     );
   }
 
-  public function validateForm(array &$element, array &$form_state, \Payment $payment) {
+  public function validate(array &$element, array &$form_state, \Payment $payment) {
     $values =& $form_state['values'];
     foreach ($element['#parents'] as $key) {
       $values =& $values[$key];
@@ -60,4 +59,5 @@ class DummyForm implements FormInterface {
     $payment->context_data['method_data'] = $values;
     $payment->form_state = &$form_state;
   }
+
 }
