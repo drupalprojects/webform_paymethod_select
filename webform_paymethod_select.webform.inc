@@ -116,10 +116,15 @@ function _webform_edit_paymethod_select($component) {
  * Implements _webform_render_[component]().
  */
 function _webform_render_paymethod_select($component, $value = NULL, $filter = TRUE) {
+  $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
+
   $element = array(
     '#type' => 'container',
     '#theme' => 'webform_paymethod_select_placeholder',
-    '#title' => $component['name'],
+    '#theme_wrappers' => ['webform_element'],
+    '#title' => $filter ? webform_filter_xss($component['name']) : $component['name'],
+    '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
+    '#description' => $filter ? webform_filter_descriptions($component['extra']['description'], $node) : $component['extra']['description'],
     '#required' => TRUE,
     '#weight' => isset($component['weight']) == TRUE ? $component['weight'] : 0,
     '#selected_payment_methods' => $component['extra']['selected_payment_methods'],

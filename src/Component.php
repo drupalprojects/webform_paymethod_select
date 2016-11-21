@@ -164,7 +164,6 @@ class Component {
       $pmid_options[$pmid] = check_plain(t($payment_method->title_generic));
     }
 
-    unset($element['#theme']);
     reset($pmid_options);
     $pmid_default = key($pmid_options);
     if (isset($element['#value'][0]) && is_numeric($element['#value'][0])) {
@@ -187,16 +186,20 @@ class Component {
         '#markup' => t('The previous payment attempt seems to have failed. The current payment status is "!status". Please try again!', array('!status' => $status))
       );
     }
-    $element += array(
-      '#type' => 'container',
+    $selector = [
+      '#title' => $element['#title'],
+      '#title_display' => $element['#title_display'],
+      '#required' => $element['#required'],
+    ];
+    $element = array(
       '#theme' => 'webform_paymethod_select_component',
+      '#title' => NULL, // This is displayed as the radios title.
+      '#title_display' => 'none',
       '#tree' => TRUE,
-      '#theme_wrappers' => array('container'),
-      '#id' => drupal_html_id('paymethod-select-wrapper'),
       '#element_validate' => array('webform_paymethod_select_component_element_validate'),
       '#cid' => $this->component['cid'],
-    );
-    $element['#attributes']['class'][] = 'paymethod-select-wrapper';
+    ) + $element;
+    $element['#wrapper_attributes']['class'][] = 'paymethod-select-wrapper';
     $element['payment_method_all_forms'] = array(
       '#type'        => 'container',
       '#id'          => 'payment-method-all-forms',
@@ -223,14 +226,12 @@ class Component {
       }
       $this->payment->contextObj = NULL;
 
-      $element['payment_method_selector'] = array(
+      $element['payment_method_selector'] = $selector + array(
         '#type'          => 'radios',
         '#id'            => 'payment-method-selector',
         '#weight'        => 1,
-        '#title'         => isset($element['#title']) ? $element['#title'] : NULL,
         '#options'       => $pmid_options,
         '#default_value' => $pmid_default,
-        '#required'      => $element['#required'],
         '#attributes'    => array('class' => array('paymethod-select-radios')),
         '#access'        => count($pmid_options) > 1,
       );

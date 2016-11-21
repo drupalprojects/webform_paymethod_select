@@ -19,7 +19,7 @@ function theme_webform_paymethod_select_component(&$variables) {
   $children = element_children($element, TRUE);
   $output = '';
   foreach ($children as $key) {
-    $output .= drupal_render($elements[$key]);
+    $output .= drupal_render($element[$key]);
   }
   return $output;
 }
