@@ -15,6 +15,7 @@ function _webform_defaults_paymethod_select() {
     'pid' => 0,
     'weight' => 0,
     'extra' => array(
+      'description' => '',
       'payment_description' => 'Default Payment',
       'selected_payment_methods' => array(),
       'line_items' => array(),
@@ -218,6 +219,10 @@ function _webform_paymethod_select_other_component_selector($form, &$form_state)
  * Implements _webform_render_[component]().
  */
 function _webform_render_paymethod_select($component, $value = NULL, $filter = TRUE) {
+  $defaults = _webform_defaults_paymethod_select();
+  $component += $defaults;
+  $component['extra'] += $defaults['extra'];
+
   $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
 
   $element = array(
