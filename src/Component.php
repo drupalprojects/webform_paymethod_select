@@ -273,12 +273,12 @@ class Component {
     // Handle setting the amount value in line items that were configured to
     // read their amount from a component.
     foreach ($extra['line_items'] as $i => $line_item) {
-      if ($line_item->amount_source === 'component') {
+      if (isset($line_item->amount_source) && $line_item->amount_source === 'component') {
         $amount = $submission->valueByCid($line_item->amount_component);
         $amount = str_replace(',', '.', $amount);
         $line_item->amount = (float) $amount;
       }
-      if ($line_item->quantity_source === 'component') {
+      if (isset($line_item->quantity_source) && $line_item->quantity_source === 'component') {
         $quantity= $submission->valueByCid($line_item->quantity_component);
         $line_item->quantity = (int) $quantity;
       }
