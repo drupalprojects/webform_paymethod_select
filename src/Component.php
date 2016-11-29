@@ -4,41 +4,41 @@ namespace Drupal\webform_paymethod_select;
 
 use \Drupal\little_helpers\Webform\FormState;
 use \Drupal\little_helpers\Webform\Submission;
+use \Drupal\little_helpers\Webform\Webform;
 
 class Component {
   protected $component;
   protected $payment = NULL;
   public function __construct(array $component) {
-    $this->component = $component;
-    $this->payment = self::createPayment($component);
+    $defaults = _webform_defaults_paymethod_select();
+    $this->component = $component + $defaults;
+    $this->component['extra'] += $defaults['extra'];
   }
 
   /**
    * Create a payment object based on the component configuration.
    *
-   * @param array $component
-   *   Weform component array.
+   * @param WebformPaymentContext $context
+   *   The current payment context.
    *
    * @return \Payment
    *   Newly created payment object.
    */
-  protected static function createPayment($component) {
-    $config = $component['extra'] + array(
+  protected function createPayment($context) {
+    $config = $this->component['extra'] + array(
       'line_items' => array(),
       'payment_description' => t('Default Payment'),
       'currency_code' => 'EUR',
     );
 
-    $payment = entity_create('payment', array(
+    $this->payment = entity_create('payment', array(
       'currency_code'   => $config['currency_code'],
       'description'     => $config['payment_description'],
       'finish_callback' => 'webform_paymethod_select_payment_finish',
     ));
-
-    foreach ($config['line_items'] as $line_item) {
-      $payment->setLineItem($line_item);
-    }
-    return $payment;
+    $this->payment->contextObj = $context;
+    $this->refreshPaymentFromContext();
+    return $this->payment;
   }
 
   /**
@@ -46,12 +46,14 @@ class Component {
    *
    * @param int $pid
    *   Payment ID.
+   * @param WebformPaymentContext $context
+   *   The current payment context.
    */
-  protected function reloadPayment($pid) {
+  protected function reloadPayment($pid, $context) {
     $this->payment = entity_load_single('payment', $pid);
-    foreach ($this->component['extra']['line_items'] as $i => $line_item) {
-      $this->payment->setLineItem($line_item);
-    }
+    $this->payment->contextObj = $context;
+    $this->refreshPaymentFromContext();
+    return $this->payment;
   }
 
   /**
@@ -84,15 +86,11 @@ class Component {
   /**
    * Get the list of available and selected payment methods.
    *
-   * @param \Drupal\payment_context\PaymentContextInterface $context
-   *   The payment context used for the alter hook.
-   *
    * @return array
    *   List of \PaymentMethod objects keyed by their pmids.
    */
-  protected function getMethods($context) {
+  protected function getMethods() {
     $methods = $this->selectedMethods();
-    $this->payment->contextObj = $context;
     if (!empty($methods)) {
       foreach ($methods as $pmid => $method) {
         try {
@@ -103,11 +101,7 @@ class Component {
         }
       }
     }
-    $this->payment->contextObj = NULL;
-    // @TODO implement  a more straight-forward interface for the alter hook
-    //       ie. use only $methods and $context as arguments.
-    $methods_copy = $methods;
-    drupal_alter('webform_paymethod_select_method_list', $context, $methods_copy, $methods);
+    drupal_alter('webform_paymethod_select_method_list', $methods, $this->payment);
     return $methods;
   }
 
@@ -156,36 +150,47 @@ class Component {
    *   - From navigating the webform steps: $form_state['values'][…].
    */
   public function render(&$element, &$form, &$form_state) {
-    $context = new WebformPaymentContext(new FormState($form['#node'], $form, $form_state), $form_state, $this->component);
+    unset($element['#theme']);
+
+    $s = Webform::fromNode($form['#node'])->formStateToSubmission($form_state);
+    $context = new WebformPaymentContext($s, $form_state, $this->component);
+
+    if (isset($element['#value'][0]) && is_numeric($element['#value'][0])) {
+      $payment = $this->reloadPayment($element['#value'][0], $context);
+
+      if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)) {
+        $element['#theme'] = 'webform_paymethod_select_already_paid';
+        $element['#payment'] = $payment;
+        unset($payment->contextObj);
+        return;
+      }
+      elseif (!$this->statusIsOneOf(PAYMENT_STATUS_NEW)) {
+        $status = payment_status_info($payment->getStatus()->status)->title;
+        $element['error'] = array(
+          '#markup' => t('The previous payment attempt seems to have failed. The current payment status is "!status". Please try again!', array('!status' => $status))
+        );
+      }
+    }
+    else {
+      $payment = $this->createPayment($context);
+    }
 
     $pmid_options = array();
-    $methods = $this->getMethods($context);
+    $methods = $this->getMethods();
     foreach($methods as $pmid => $payment_method) {
       $pmid_options[$pmid] = check_plain(t($payment_method->title_generic));
     }
 
-    reset($pmid_options);
-    $pmid_default = key($pmid_options);
-    if (isset($element['#value'][0]) && is_numeric($element['#value'][0])) {
-      if (!$this->payment->pid || $this->payment->pid != $element['#value'][0]) {
-        $this->reloadPayment($element['#value'][0]);
-        $pmid_default = $this->payment->method->pmid;
-      }
+    if ($payment->method) {
+      $pmid_default = $payment->method->pmid;
     }
     elseif (!empty($element['#value']['payment_method_selector'])) {
       $pmid_default = $element['#value']['payment_method_selector'];
     }
-    if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)){
-      $element['#theme'] = 'webform_paymethod_select_already_paid';
-      $element['#payment'] = $this->payment;
-      return;
+    else {
+      $pmid_default = key($pmid_options);
     }
-    elseif (!$this->statusIsOneOf(PAYMENT_STATUS_NEW)) {
-      $status = payment_status_info($this->payment->getStatus()->status)->title;
-      $element['error'] = array(
-        '#markup' => t('The previous payment attempt seems to have failed. The current payment status is "!status". Please try again!', array('!status' => $status))
-      );
-    }
+
     $selector = [
       '#title' => $element['#title'],
       '#title_display' => $element['#title_display'],
@@ -208,7 +213,7 @@ class Component {
     );
 
     if (!count($pmid_options)) {
-      if (!$this->payment->pid && isset($form['actions']['submit'])) {
+      if (!$payment->pid && isset($form['actions']['submit'])) {
         // when no payment method is selected (or available) disable submit
         // button
         $form['actions']['submit']['#disabled'] = TRUE;
@@ -220,11 +225,9 @@ class Component {
       );
     }
     else {
-      $this->payment->contextObj = $context;
       foreach ($pmid_options as $pmid => $method_name) {
         $element['payment_method_all_forms'][$pmid] = $this->methodForm($methods[$pmid], $form_state);
       }
-      $this->payment->contextObj = NULL;
 
       $element['payment_method_selector'] = $selector + array(
         '#type'          => 'radios',
@@ -236,6 +239,8 @@ class Component {
         '#access'        => count($pmid_options) > 1,
       );
     }
+    unset($payment->contextObj);
+    $this->payment = $payment;
   }
 
   public function validate(array $element, array &$form_state) {
@@ -257,30 +262,44 @@ class Component {
     }
   }
 
-  public function submit(&$form, &$form_state, $submission) {
-    if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)){
-      return;
-    }
+  /**
+   * Re-read configuration from component and context and update the payment.
+   */
+  protected function refreshPaymentFromContext() {
     $payment = $this->payment;
+    $submission = $payment->contextObj->getSubmission();
+
+    $extra = $this->component['extra'];
+    if ($extra['currency_code_source'] === 'component') {
+      $payment->currency_code = $submission->valueByCid($extra['currency_code_component']);
+    }
 
     // Set the payment up for a (possibly repeated) payment attempt.
     // Handle setting the amount value in line items that were configured to
     // read their amount from a component.
-    foreach ($payment->line_items as $line_item) {
-      if ($line_item->amount_source === 'component') {
+    foreach ($extra['line_items'] as $line_item) {
+      if (isset($line_item->amount_source) && $line_item->amount_source === 'component') {
         $amount = $submission->valueByCid($line_item->amount_component);
         $amount = str_replace(',', '.', $amount);
         $line_item->amount = (float) $amount;
       }
-      if ($line_item->quantity_source === 'component2') {
+      if (isset($line_item->quantity_source) && $line_item->quantity_source === 'component') {
         $quantity= $submission->valueByCid($line_item->quantity_component);
         $line_item->quantity = (int) $quantity;
       }
+      $payment->setLineItem($line_item);
     }
-    $values = $form_state['values']['submitted'][$this->component['cid']];
-    $payment->method = entity_load_single('payment_method', $values['payment_method_selector']);
+  }
+
+  public function submit(&$form, &$form_state, $submission) {
+    $payment = $this->payment;
+    if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)){
+      return;
+    }
     $context = new WebformPaymentContext($submission, $form_state, $this->component);
     $payment->contextObj = $context;
+    $this->refreshPaymentFromContext();
+
     if ($payment->getStatus()->status != PAYMENT_STATUS_NEW) {
       $payment->setStatus(new \PaymentStatusItem(PAYMENT_STATUS_NEW));
     }
