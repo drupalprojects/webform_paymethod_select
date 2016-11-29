@@ -4,4 +4,5 @@ core = 7.x
 
 dependencies[] = payment
 dependencies[] = payment_context
+dependencies[] = payment_forms (>= 7.x-2.0-beta1)
 dependencies[] = psr0

@@ -3,12 +3,15 @@
 namespace Drupal\wps_test_method;
 
 class DummyController extends \PaymentMethodController {
-  public $payment_configuration_form_elements_callback = 'payment_forms_method_form';
+  public $payment_configuration_form_elements_callback = 'payment_forms_payment_form';
   public $form;
   public function __construct() {
-    $this->form = new DummyForm();
-    $this->title = 'Dummy payment method.';
-    $this->description = 'This payment method allows to mock payment provider behavior.';
+    $this->title = t('Dummy payment method.');
+    $this->description = t('This payment method allows to mock payment provider behavior.');
+  }
+
+  public function paymentForm(\Payment $payment) {
+    return new DummyForm();
   }
 
   /**
