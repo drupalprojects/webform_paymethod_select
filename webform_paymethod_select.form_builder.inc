@@ -41,6 +41,12 @@ function _webform_form_builder_map_paymethod_select() {
       'currency_code' => array(
         'storage_parents' => array('extra', 'currency_code'),
       ),
+      'currency_code_source' => array(
+        'storage_parents' => array('extra', 'currency_code_source'),
+      ),
+      'currency_code_component' => array(
+        'storage_parents' => array('extra', 'currency_code_component'),
+      ),
       'line_items' => array(
         'storage_parents' => array('extra', 'line_items'),
       ),
@@ -58,9 +64,6 @@ function webform_paymethod_select_form_builder_all_properties_form(&$form_state,
     '#tree'         => TRUE,
   );
 
-  if (isset($element['#' . $property])) {
-    $element['#webform_component']['extra'][$property] = $element['#' . $property];
-  }
   $component_edit_form = _webform_edit_paymethod_select($element['#webform_component']);
   $form[$property] += $component_edit_form['extra'][$property];
 
@@ -77,9 +80,6 @@ function webform_paymethod_select_line_item_property_form(&$form_state, $form_ty
     '#tree'         => TRUE,
   );
 
-  if (isset($element['#line_items'])) {
-    $element['#webform_component']['extra']['line_items'] = $element['#line_items']['items'];
-  }
   $component_edit_form = _webform_edit_paymethod_select($element['#webform_component']);
   $form['line_items'] += $component_edit_form['extra']['line_items'];
   $form['line_items']['#parents'] = array('line_items');

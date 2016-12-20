@@ -95,7 +95,6 @@ function _webform_edit_paymethod_select($component) {
       '#default_value' => $component['extra']['payment_description'],
       '#required' => TRUE,
     ),
-    '#element_validate' => array('_webform_paymethod_select_currency_values'),
   );
 
   $form['extra']['selected_payment_methods'] = array(
@@ -108,6 +107,7 @@ function _webform_edit_paymethod_select($component) {
 
   $form['extra']['currency_code'] = array(
     '#type' => 'container',
+    '#element_validate' => array('_webform_paymethod_select_currency_values'),
   );
 
   $radio_id = drupal_html_id('webform-paymethod-select-currency');
@@ -168,13 +168,12 @@ function _webform_edit_paymethod_select($component) {
  * Element validate function for the component or value currency config.
  */
 function _webform_paymethod_select_currency_values($element, &$form_state, $form) {
-  $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
+  $parents_parents = array_splice($element['#parents'], 0, -1);
+  $values = &drupal_array_get_nested_value($form_state['values'], $parents_parents);
 
   $values['currency_code_source'] = $values['currency_code']['source'];
   $values['currency_code_component'] = $values['currency_code']['component'];
   $values['currency_code'] = $values['currency_code']['value'];
-
-  form_set_value($element, $values, $form_state);
 }
 
 
