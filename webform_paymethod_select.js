@@ -128,7 +128,7 @@ Webform.prototype.submitFunction = function() {
   return function() {
     self.passSubmit = true;
     if (button) {
-      $(button).attr('disabled', null).click().attr('disabled', true);
+      $(button).prop('disabled', false).click().prop('disabled', true);
     }
     else {
       self.$form.submit();
@@ -148,14 +148,14 @@ Webform.prototype.ajaxSubmitFunction = function(options) {
 
 Webform.prototype.showProgress = function() {
   this.buttons = this.$form.find('input[type=submit]:not(:disabled)');
-  this.buttons.attr('disabled', true);
+  this.buttons.prop('disabled', true);
   this.progress_element = $('<div class="ajax-progress ajax-progress-throbber"><div class="throbber">&nbsp;</div></div>');
   $(this.activeButton).after(this.progress_element);
 };
 
 Webform.prototype.removeProgress = function() {
   this.progress_element.remove();
-  this.buttons.attr('disabled', null);
+  this.buttons.prop('disabled', false);
 }
 
 Drupal.behaviors.webform_paymethod_select = {

@@ -21,6 +21,30 @@ function webform_paymethod_select_enable() {
 }
 
 /**
+ * Implements hook_requirements().
+ *
+ * Check for jQuery>=1.6.
+ */
+function webform_paymethod_select_requirements($phase) {
+  $requirements = [];
+  if ($phase == 'runtime') {
+    $version = variable_get('jquery_update_jquery_version', '1.10');
+    if (!module_exists('jquery_update') || $version === 'default') {
+      $version = '1.4';
+    }
+    if (version_compare($version, '1.6', '<')) {
+      $requirements['webform_paymethod_select_jquery'] = [
+        'title' => t('Webform paymethod needs jQuery 1.6 or newer.'),
+        'value' => $version,
+        'description' => t('You can change the jQuery version on the !admin_page .', ['!admin_page' => l(t('jquery_update configuration page'), 'admin/config/development/jquery_update')]),
+        'severity' => REQUIREMENT_ERROR,
+      ];
+    }
+  }
+  return $requirements;
+}
+
+/**
  * Update / unify payment context data.
  */
 function webform_paymethod_select_update_1() {
