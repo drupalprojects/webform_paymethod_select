@@ -164,6 +164,9 @@ function webform_paymethod_select_form_webform_client_form_alter(&$form, &$form_
       $form['#submit'][] = 'webform_paymethod_select_form_submit';
     }
   }
+  else {
+    return;
+  }
 
   // Initialize all component objects in the $form_state if needed.
   if (!isset($form_state['webform_paymethod_select'])) {
