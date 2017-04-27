@@ -209,7 +209,10 @@ class Component {
       '#type'        => 'container',
       '#id'          => 'payment-method-all-forms',
       '#weight'      => 2,
-      '#attributes'  => array('class' => array('payment-method-all-forms')),
+      '#attributes'  => ['class' => [
+        'payment-method-all-forms',
+        'webform-prefill-exclude',
+      ]],
     );
 
     if (!count($pmid_options)) {
