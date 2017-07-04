@@ -128,7 +128,9 @@ Webform.prototype.submitFunction = function() {
   return function() {
     self.passSubmit = true;
     if (button) {
-      $(button).prop('disabled', false).click().prop('disabled', true);
+      // Create a temporary non-disabled clone of the button and click it.
+      $(button).clone().prop('disabled', false).hide()
+        .appendTo($(button).parent()).click().detach();
     }
     else {
       self.$form.submit();
