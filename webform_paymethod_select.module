@@ -22,18 +22,25 @@ require_once dirname(__FILE__) . '/webform_paymethod_select.webform.inc';
  * Implements hook_menu().
  */
 function webform_paymethod_select_menu() {
-  $menu['node/%node/webform-continue/%webform_menu_submission/%'] = array(
-    'title callback' => 'node_page_title',
+  $menu['node/%webform_paymethod_select_submission/webform-continue/%/%'] = array(
+    'title callback' => 'webform_paymethod_select_page_title',
     'title arguments' => array(1),
     'page callback' => 'webform_paymethod_select_continue',
-    'page arguments' => array(1, 3, 4),
+    'page arguments' => array(1, 4),
     'access callback' => 'webform_paymethod_select_continue_access',
-    'access arguments' => array(1, 3, 4),
-    'load arguments' => array(1),
+    'access arguments' => array(1, 4),
+    'load arguments' => array(3),
     'type' => MENU_CALLBACK,
     'file' => 'webform_paymethod_select.pages.inc',
   );
   return $menu;
+}
+
+/**
+ * Load callback: Load a webform submission.
+ */
+function webform_paymethod_select_submission_load($nid, $sid) {
+  return Submission::load($nid, $sid);
 }
 
 function _webform_paymethod_select_reenter_hash($nid, $sid, $page_num) {
@@ -41,7 +48,8 @@ function _webform_paymethod_select_reenter_hash($nid, $sid, $page_num) {
   return drupal_hmac_base64("$nid:$sid:$page_num", $key);
 }
 
-function webform_paymethod_select_continue_access($node, $submission, $page_num) {
+function webform_paymethod_select_continue_access($submission, $page_num) {
+  $node = $submission->node;
   if (empty($node->webform) || empty($node->webform['components'])) {
     return FALSE;
   }

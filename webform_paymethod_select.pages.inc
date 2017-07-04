@@ -1,13 +1,21 @@
 <?php
 
 /**
+ * Title callback: Get node title from submission object.
+ */
+function webform_paymethod_select_page_title($submission) {
+  return $submission->node->title;
+}
+
+/**
  * Page callback for continuing a webform submission after payment.
  */
-function webform_paymethod_select_continue($node, $submission, $page_num) {
+function webform_paymethod_select_continue($submission, $page_num) {
   // We can't use a simple drupal_get_form() because we wan't to enter the form
   // at a specific $page_num.
   $form_state = array();
 
+  $node = $submission->node;
   $args = array($node, $submission, TRUE, TRUE);
   $form_state['build_info']['args'] = $args;
 
