@@ -16,7 +16,7 @@ function webform_paymethod_select_continue($submission, $page_num) {
   $form_state = array();
 
   $node = $submission->node;
-  $args = array($node, $submission, TRUE, TRUE);
+  $args = array($node, $submission->unwrap(), TRUE, TRUE);
   $form_state['build_info']['args'] = $args;
 
   $form_state['storage']['component_tree'] = array();
