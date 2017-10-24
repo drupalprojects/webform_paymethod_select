@@ -248,6 +248,9 @@ function webform_paymethod_select_form_submit($form, &$form_state) {
       // Completely repopulate the $form_state['storage'] if needed.
       $form_state += ['storage' => []];
       $form_state['storage'] += $form_state['webform'];
+      if (!isset($form_state['storage']['submitted'])) {
+        $form_state['storage']['submitted'] = $form_state['values']['submitted'];
+      }
 
       // Redirect instead of rebuild if all non-success-components are pending.
       if ($pending) {
