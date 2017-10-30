@@ -23,6 +23,7 @@ function _webform_defaults_paymethod_select() {
       'currency_code_source' => 'fixed',
       'currency_code_component' => NULL,
       'private' => FALSE,
+      'title_display' => 'above',
     ),
   );
 
