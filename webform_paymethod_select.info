@@ -9,7 +9,7 @@ dependencies[] = payment (>1.5)
 dependencies[] = payment_context
 dependencies[] = payment_forms
 dependencies[] = psr0
-dependencies[] = webform
+dependencies[] = webform (>=4.11)
 
 stylesheets[all][] = webform_paymethod_select.css
 
