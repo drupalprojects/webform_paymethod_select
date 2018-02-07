@@ -7,12 +7,7 @@ dependencies[] = jquery_update (>=2.0)
 dependencies[] = little_helpers
 dependencies[] = payment (>1.5)
 dependencies[] = payment_context
-dependencies[] = payment_forms
 dependencies[] = psr0
 dependencies[] = webform (>=4.11)
 
 stylesheets[all][] = webform_paymethod_select.css
-
-files[] = webform_paymethod_select.webform.inc
-files[] = webform_paymethod_select.form_builder.inc
-files[] = webform_paymethod_select.line_item.inc
