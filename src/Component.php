@@ -243,6 +243,7 @@ class Component {
         '#title'  => isset($element['#title']) ? $element['#title'] : NULL,
         '#markup' => t('There are no payment methods, check the options of this webform element to enable methods.'),
       );
+      watchdog('webform_paymethod_select', 'No payment methods available.', [], WATCHDOG_ERROR);
     }
     else {
       foreach ($pmid_options as $pmid => $method_name) {
