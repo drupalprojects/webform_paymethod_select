@@ -2,13 +2,26 @@
 
 namespace Drupal\webform_paymethod_select;
 
-use \Drupal\little_helpers\Webform\FormState;
-use \Drupal\little_helpers\Webform\Submission;
-use \Drupal\little_helpers\Webform\Webform;
+use Drupal\little_helpers\Webform\Webform;
 
+/**
+ * The payment form component.
+ *
+ * - Renders the payment forms.
+ * - Prepares the payment object based on the form submission.
+ * - Initiates the payment process.
+ */
 class Component {
+
   protected $component;
   protected $payment = NULL;
+
+  /**
+   * Construct a new instance from a webform component array.
+   *
+   * @param array $component
+   *   The webform component.
+   */
   public function __construct(array $component) {
     $defaults = _webform_defaults_paymethod_select();
     $this->component = $component + $defaults;
@@ -18,13 +31,13 @@ class Component {
   /**
    * Create a payment object based on the component configuration.
    *
-   * @param WebformPaymentContext $context
+   * @param \Drupal\webform_paymethod_select\WebformPaymentContext $context
    *   The current payment context.
    *
    * @return \Payment
    *   Newly created payment object.
    */
-  protected function createPayment($context) {
+  protected function createPayment(WebformPaymentContext $context) {
     $config = $this->component['extra'] + array(
       'line_items' => array(),
       'payment_description' => t('Default Payment'),
@@ -46,10 +59,10 @@ class Component {
    *
    * @param int $pid
    *   Payment ID.
-   * @param WebformPaymentContext $context
+   * @param \Drupal\webform_paymethod_select\WebformPaymentContext $context
    *   The current payment context.
    */
-  protected function reloadPayment($pid, $context) {
+  protected function reloadPayment($pid, WebformPaymentContext $context) {
     $this->payment = entity_load_single('payment', $pid);
     $this->payment->contextObj = $context;
     $this->refreshPaymentFromContext();
@@ -117,7 +130,7 @@ class Component {
 
     $element = array(
       '#type'        => 'fieldset',
-      '#title'       => t($method->title_generic),
+      '#title'       => $method->title_generic,
       '#attributes'  => array('class' => array('payment-method-form'), 'data-pmid' => $method->pmid),
       '#collapsible' => FALSE,
       '#collapsed'   => FALSE,
@@ -139,11 +152,12 @@ class Component {
     return $element;
   }
 
-  /** 
+  /**
    * Render the webform component.
    *
-   * The element array includes the data put there by
-   * @see _webform_render_paymethod_select(). Especially:
+   * The element array includes the data put there
+   * by @see _webform_render_paymethod_select().
+   * Especially:
    * - #value: The previous value for this submission. The format of the data
    *   provided depends on where it came from:
    *   - From a previous submission: [0 => $payment->pid].
@@ -167,7 +181,7 @@ class Component {
       elseif (!$this->statusIsOneOf(PAYMENT_STATUS_NEW)) {
         $status = payment_status_info($payment->getStatus()->status)->title;
         $element['error'] = array(
-          '#markup' => t('The previous payment attempt seems to have failed. The current payment status is "!status". Please try again!', array('!status' => $status))
+          '#markup' => t('The previous payment attempt seems to have failed. The current payment status is "!status". Please try again!', ['!status' => $status]),
         );
       }
     }
@@ -177,8 +191,8 @@ class Component {
 
     $pmid_options = array();
     $methods = $this->getMethods();
-    foreach($methods as $pmid => $payment_method) {
-      $pmid_options[$pmid] = check_plain(t($payment_method->title_generic));
+    foreach ($methods as $pmid => $payment_method) {
+      $pmid_options[$pmid] = check_plain($payment_method->title_generic);
     }
 
     if ($payment->method) {
@@ -198,7 +212,8 @@ class Component {
     ];
     $element = array(
       '#theme' => 'webform_paymethod_select_component',
-      '#title' => NULL, // This is displayed as the radios title.
+      // This is displayed as the radios title.
+      '#title' => NULL,
       '#title_display' => 'none',
       '#tree' => TRUE,
       '#element_validate' => array('webform_paymethod_select_component_element_validate'),
@@ -209,16 +224,18 @@ class Component {
       '#type'        => 'container',
       '#id'          => 'payment-method-all-forms',
       '#weight'      => 2,
-      '#attributes'  => ['class' => [
-        'payment-method-all-forms',
-        'webform-prefill-exclude',
-      ]],
+      '#attributes'  => [
+        'class' => [
+          'payment-method-all-forms',
+          'webform-prefill-exclude',
+        ],
+      ],
     );
 
     if (!count($pmid_options)) {
       if (!$payment->pid && isset($form['actions']['submit'])) {
-        // when no payment method is selected (or available) disable submit
-        // button
+        // When no payment method is selected (or available) disable submit
+        // button.
         $form['actions']['submit']['#disabled'] = TRUE;
       }
       $element['pmid_title'] = array(
@@ -226,6 +243,7 @@ class Component {
         '#title'  => isset($element['#title']) ? $element['#title'] : NULL,
         '#markup' => t('There are no payment methods, check the options of this webform element to enable methods.'),
       );
+      watchdog('webform_paymethod_select', 'No payment methods available.', [], WATCHDOG_ERROR);
     }
     else {
       foreach ($pmid_options as $pmid => $method_name) {
@@ -246,6 +264,11 @@ class Component {
     $this->payment = $payment;
   }
 
+  /**
+   * Validate the form input for the paymethod select element.
+   *
+   * Give the selected payment method a chance to do its own validation.
+   */
   public function validate(array $element, array &$form_state) {
     $payment = $this->payment;
     $values  = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
@@ -287,16 +310,19 @@ class Component {
         $line_item->amount = (float) $amount;
       }
       if (isset($line_item->quantity_source) && $line_item->quantity_source === 'component') {
-        $quantity= $submission->valueByCid($line_item->quantity_component);
+        $quantity = $submission->valueByCid($line_item->quantity_component);
         $line_item->quantity = (int) $quantity;
       }
       $payment->setLineItem($line_item);
     }
   }
 
+  /**
+   * Form submit callback: Initiate the payment.
+   */
   public function submit(&$form, &$form_state, $submission) {
     $payment = $this->payment;
-    if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)){
+    if ($this->statusIsOneOf(PAYMENT_STATUS_SUCCESS)) {
       return;
     }
     $context = new WebformPaymentContext($submission, $form_state, $this->component);
@@ -308,11 +334,16 @@ class Component {
     }
     entity_save('payment', $payment);
 
-    // Set the component value to the $payment->pid - we don't save any payment data.
+    // Set component value to the pid - we don't save any payment data.
     $node = $submission->webform->node;
     db_query(
       "UPDATE {webform_submitted_data} SET data=:pid WHERE nid=:nid AND cid=:cid AND sid=:sid",
-      array(':nid' => $node->nid, ':cid' => $this->component['cid'], ':sid' => $submission->unwrap()->sid, ':pid' => $payment->pid)
+      [
+        ':nid' => $node->nid,
+        ':cid' => $this->component['cid'],
+        ':sid' => $submission->unwrap()->sid,
+        ':pid' => $payment->pid,
+      ]
     );
     $form_state['values']['submitted'][$this->component['cid']] = array($payment->pid);
 
@@ -320,6 +351,14 @@ class Component {
     $payment->execute();
   }
 
+  /**
+   * Helper function to check the current payment’s status.
+   *
+   * This function accepts a variable number of status strings.
+   *
+   * @return bool
+   *   TRUE if the payment status is an ancestor of one of the passed statuses.
+   */
   public function statusIsOneOf() {
     $statuses = func_get_args();
     $status = $this->payment->getStatus()->status;
@@ -330,4 +369,5 @@ class Component {
     }
     return FALSE;
   }
+
 }
